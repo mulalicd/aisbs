@@ -1,26 +1,26 @@
 @echo off
-:: Fast push skripta za AISBS
-:: Sačuvaj kao: C:\PRIVATE\AI\AISBS\push.bat
+:: AISBS Quick Push
+:: Sačuvaj kao: C:\PRIVATE\AI\AISBS\quick_push.bat
 
 cd /d "C:\PRIVATE\AI\AISBS"
 
-echo AISBS GitHub Push (main grana)
-echo ===============================
+echo ⚡ AISBS Quick Push
+echo ==================
 
-:: Provjeri da li smo na main
-for /f "tokens=*" %%i in ('git branch --show-current 2^>nul') do set "CURRENT_BRANCH=%%i"
-if not "%CURRENT_BRANCH%"=="main" (
-    echo Niste na main grani! Trenutno: %CURRENT_BRANCH%
-    echo Prebacujem na main...
-    git checkout main 2>nul
-)
+:: Provjeri status
+git status --short
 
-:: Add, commit, push
+:: Add all
 git add --all
-git commit -m "Update: %date% %time%"
+
+:: Commit sa timestamp-om
+for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set datetime=%%I
+set timestamp=%datetime:~0,4%-%datetime:~4,2%-%datetime:~6,2%_%datetime:~8,2%-%datetime:~10,2%
+git commit -m "Update %timestamp%" --allow-empty
+
+:: Push
 git push origin main
 
 echo.
-echo ✓ Push-ovano na: https://github.com/mulalicd/aisbs
-echo.
-pause
+echo ✅ Pushano na: https://github.com/mulalicd/aisbs
+timeout /t 3 >nul
