@@ -2,6 +2,7 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 
+import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import ChapterView from './pages/ChapterView';
@@ -50,22 +51,24 @@ export const UstavProvider = ({ children }) => {
 
 function App() {
   return (
-    <BrowserRouter>
-      <UstavProvider>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/chapter/:chapterId" element={<ChapterView />} />
-            <Route path="/chapter/:chapterId/problem/:problemId" element={<ProblemView />} />
-            <Route
-              path="/chapter/:chapterId/problem/:problemId/prompt/:promptId"
-              element={<PromptExecution />}
-            />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </Layout>
-      </UstavProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <UstavProvider>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/chapter/:chapterId" element={<ChapterView />} />
+              <Route path="/chapter/:chapterId/problem/:problemId" element={<ProblemView />} />
+              <Route
+                path="/chapter/:chapterId/problem/:problemId/prompt/:promptId"
+                element={<PromptExecution />}
+              />
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </Layout>
+        </UstavProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

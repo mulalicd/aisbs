@@ -1,257 +1,152 @@
 {
+  "metadata": {
+    "title": "AI Solved Business Problems",
+    "subtitle": "50 Real-World Challenges from 10 Industries",
+    "version": "1.0.0",
+    "finalized": "2026-02-10",
+    "totalChapters": 1,
+    "totalProblems": 1,
+    "totalPrompts": 1,
+    "note": "Chapter 1 finalized with full Problem 1.1 specification. Chapters 2-10 structure ready for integration."
+  },
   "chapters": [
     {
       "id": "ch1",
       "number": 1,
-      "title": "Financial Services",
-      "intro": "The financial services industry faces unprecedented challenges in digital transformation, risk management, customer experience, and regulatory compliance. This chapter explores five critical problems that financial institutions must solve to remain competitive.",
+      "title": "Logistics & Supply Chain - The AI Operating System",
+      "introduction": "Your phone rings at 2:00 AM. It's the Port of Long Beach. Your priority containers are stuck behind a vessel that lost power in the channel. By 8:00 AM, your CFO asks why 'transportation variable costs' are decoupling from revenue. By 10:00 AM, the board is breathing down your neck about 'working capital efficiency.' You're managing three simultaneous crises: Inventory Bullwhip Hangover ($14M slow inventory at 22% carrying cost), Carrier Ransom (freight spend up 34% since 2021, service flat), Human Middleware Collapse (supply chain planners functioning as human macros). The Decision Gap: 14.2 hours from port strike to operational reroute. AI is the operating system upgrade required to close this gap.",
       "problems": [
         {
           "id": "ch1_p1",
           "number": 1,
-          "title": "Credit Risk Assessment at Scale",
-          "narrative": "A major bank processes thousands of loan applications daily. Traditional credit scoring models fail to capture non-traditional borrower profiles, leading to missed opportunities and portfolio imbalance. The challenge is to expand credit availability while maintaining risk controls.",
-          "workflow": "1. Collect borrower data (credit history, income, assets, behavioral signals). 2. Retrieve similar historical cases + ROI benchmarks. 3. Model risk profile using multi-factor analysis. 4. Output risk score + recommended action (approve/reject/review). 5. Track outcome vs. prediction.",
-          "businessCase": "Expected 15% increase in approved applications, 8% reduction in default rates, $2.3M annual ROI from better risk calibration.",
-          "failureModes": ["Over-reliance on historical data misses market shifts", "Bias in training data perpetuates unfair lending", "Model drift reduces accuracy as borrower behavior changes", "Regulatory rejection due to explainability gaps"],
-          "roi": "$2.3M annually | 18-month payback",
+          "title": "The Freight Leak (Automated Audit & Dispute)",
+          "severity": "CRITICAL",
+          "promptability": 9.5,
+          "narrative": "Your Accounts Payable (AP) department spot-checks 10% of freight invoices, missing the 'death by a thousand cuts'—$80 residential surcharges on warehouse transfers, $150 unapproved detention fees. 6% error rate on $12M spend = $720K annual loss. Your team drowns in blurry PDFs, unable to audit 5,000 invoice lines against 200-page contracts in real-time.",
+          "workflow": "1. Retrieve carrier contracts + zone definitions. 2. Load invoice batch (CSV). 3. For each invoice line: verify ZIP in correct zone, destination type matches surcharge, pre-approval if required, fuel index in range. 4. Flag discrepancies (zone mismatch, unauthorized surcharge, missing approval, calc error). 5. Draft dispute emails with contract clause citations. 6. Route for AP review/send.",
+          "businessCase": "Current: $12M spend, 6% error = $720K loss. AI Outcome: 100% coverage, 3.5% conservative recovery = $420K. Costs: $45K impl + $24K/yr ops. Payback: 1.2 months. Year 1 ROI: 281%. Break-even at just 0.58% recovery.",
+          "sections": {
+            "operationalReality": "Your AP department spot-checks 10% of freight invoices. 6% error rate. $720K/year being 'tipped' to carriers. Team drowning in blurry invoices, missing systemic overcharges. Friday 3PM: they just want to clear the queue, not catch the West Coast fuel index applied to Midwest lanes.",
+            "whyTraditionalFails": "3rd-party audit firms take 25% cut. Rule-based systems break when surcharge names change ('Fuel-S' to 'F-Surcharge'). Your planners spend 60% as human macros, no scale.",
+            "managerDecisionPoint": "Option 1: Status Quo—lose $500K+. Option 2: 3rd-party audit—high cost, no fix. Option 3: AI-augmented auditor—100% coverage, 3-5% recovery, pre-writes disputes. WINNER: Option 3.",
+            "aiWorkflow": "Monday 9:15 AM: AP clerk opens Dispute Dashboard. AI ingested contracts & invoices overnight. Carrier X charged 'Residential Surcharge' on 42 shipments to commercial warehouse. AI flagged, drafted dispute citing contract section and GPS coordinates. Clerk reviews 42 items in 15 minutes.",
+            "executionPrompt": "# PROMPT 1.1: FREIGHT INVOICE AUDIT AGENT\n## Role: Expert freight audit specialist (15+ years logistics)\n## Objective: Identify billing errors in freight invoices vs. carrier contracts\n\n## INPUTS\n**INPUT 1: Carrier Contracts** - PDF/markdown with: surcharge definitions, zone mappings, rate tables, payment terms\n**INPUT 2: Invoice CSV** - columns: invoice_id, date, carrier, origin_zip, dest_zip, dest_type (commercial/residential), base_charge, surcharges, fuel_surcharge, total\n**INPUT 3: Business Rules** - pre-approval requirements, zone definitions, authorized surcharges, exclusions\n\n## PROCESS\n1. **Parse Contract**: Extract surcharge types + conditions, zone definitions, exclusion clauses. Flag ambiguous language.\n2. **Validate Invoices**: For EACH line item—verify dest_zip in correct zone per contract, dest_type matches surcharge applied, surcharge is authorized, pre-approval provided if required, fuel surcharge within contract range.\n3. **Identify Errors**: Categorize: zone mismatch, type mismatch, unauthorized surcharge, missing approval, calculation error, rate manipulation.\n4. **Draft Disputes**: Cite exact contract clause number + invoice line, explain impropriety, request resolution, pre-write professional carrier email.\n\n## OUTPUT  \nStructured JSON: report_id, audit_date, total_invoices_reviewed, disputed_items_count, total_disputed_amount, recovery_rate_%, disputes_array[] {invoiceId, chargeType, amount, reason, contractReference, confidenceScore}, email_drafts[], summary{categories, conservative_recovery_estimate}\n\n## QUALITY STANDARDS\n- 99% precision (false disputes harm carrier relationships)\n- Confidence threshold: ≥0.85 only\n- 2-minute review time per dispute\n- All disputes cite specific contract clauses (legally defensible)\n\n## EDGE CASES  \n1. Blurry PDF: confidence <0.7, flag manual review\n2. Ambiguous contract language: defer to carrier unless clearly improper\n3. Fuel index disputes: only if >10% above contract range\n4. Zone boundary disputes: defer unless documentation clearly places elsewhere\n5. Relationship protection: prioritize $500+ items + systemic errors over small items\n\nPlatforms: ChatGPT-4, Claude 3.5, Gemini 2.0, Ollama Llama13B+\nCost: ~$0.15/invoice batch (1000-invoice runs)\nPilot strategy: Single carrier (most contractual consistency)\nBatch frequency: Weekly (Friday eve, Monday morning review)",
+            "industryContext": "Widespread problem: Aberdeen reports companies <$50M waste 8-12%, >$500M waste 4-6% due to scale. Carrier ransom (rates +34% since 2021, service flat) accelerated. CSCMP Global Benchmark 2024 confirms trend.",
+            "failureModes": "See detailed 3 failure modes with recovery playbooks below"
+          },
           "prompts": [
             {
               "id": "ch1_p1_pr1",
-              "title": "Risk Scoring Wizard",
-              "code": "Analyze the provided borrower profile and historical loan portfolio. Score risk on a 1-10 scale, highlight key risk factors, and recommend approval decision.",
+              "title": "Freight Invoice Audit Agent",
+              "version": "1.0.0",
+              "role": "Expert freight audit specialist",
+              "severity": "CRITICAL",
+              "platformCompatibility": ["ChatGPT-4", "Claude 3.5 Sonnet", "Gemini 2.0", "Ollama Llama13B+"],
               "inputSchema": {
-                "type": "object",
-                "properties": {
-                  "borrowerId": { "type": "string" },
-                  "creditScore": { "type": "number", "min": 300, "max": 850 },
-                  "income": { "type": "number", "min": 0 },
-                  "loanAmount": { "type": "number", "min": 0 },
-                  "employmentYears": { "type": "number", "min": 0 },
-                  "debtToIncome": { "type": "number", "min": 0, "max": 1 }
-                },
-                "required": ["borrowerId", "creditScore", "income", "loanAmount"]
+                "input1": {"label": "Carrier Contracts", "format": "PDF/markdown text", "required_sections": ["Surcharges", "Zone Definitions", "Rate Tables"]},
+                "input2": {"label": "Invoice Data", "format": "CSV", "required_columns": ["invoice_id", "carrier", "dest_zip", "dest_type", "base_charge", "surcharges", "fuel_index"]},
+                "input3": {"label": "Business Rules", "format": "Text/bullets", "required_fields": ["Pre-approval requirements", "Zone mappings", "Authorized surcharges"]}
               },
               "mockOutput": {
-                "riskScore": 6.2,
-                "riskLevel": "MODERATE",
-                "factors": [
-                  { "factor": "Credit Score 720", "impact": "Positive", "weight": 0.3 },
-                  { "factor": "Debt-to-Income 0.42", "impact": "Concern", "weight": 0.25 },
-                  { "factor": "Employment 8 years", "impact": "Positive", "weight": 0.2 },
-                  { "factor": "Loan Amount $150K", "impact": "Neutral", "weight": 0.15 }
+                "reportId": "AUDIT-2025-02-10-001",
+                "auditDate": "2025-02-10",
+                "totalInvoicesReviewed": 142,
+                "totalLineItems": 1247,
+                "disputedLineItems": 34,
+                "totalDisputedAmount": "$8,450.00",
+                "recoveryRate": "2.8%",
+                "disputes": [
+                  {"invoiceId": "XPO-INV-00002", "lineItem": 1, "chargeType": "Residential Delivery", "amount": "$85.00", "reason": "Zone A (commercial) per Section 4.1. Residential surcharge only for Zone C.", "contractRef": "XPO-2025-NY-001 Section 3.2, 4.1", "confidence": 0.99},
+                  {"invoiceId": "XPO-INV-00003", "lineItem": 3, "chargeType": "Detention Fee", "amount": "$150.00", "reason": "Missing pre-approval documentation required by Section 3.2", "contractRef": "XPO-2025-NY-001 Section 3.2", "confidence": 0.94}
                 ],
-                "recommendation": "CONDITIONAL_APPROVE",
-                "conditions": ["Require co-signer for loans >$200K", "Reduce DTI to <0.40 via debt payoff"],
-                "similarCases": 1247,
-                "historicalApprovalRate": 0.87,
-                "projectedDefaultRate": 0.04
+                "summary": "34 disputed charges: zone mismatches (18), unauthorized surcharges (8), missing pre-approvals (5), rate errors (3). Conservative recovery (70% acceptance): $5,915"
               }
             }
-          ]
-        },
-        {
-          "id": "ch1_p2",
-          "number": 2,
-          "title": "Anti-Money Laundering (AML) Detection",
-          "narrative": "Regulatory pressure and transaction volume overwhelm manual AML screening. Financial institutions face fines for missed suspicious activity, yet false positives waste investigator time. The problem is balancing detection accuracy with operational efficiency.",
-          "workflow": "1. Ingest transaction metadata (amount, parties, frequency, geography). 2. Match against sanctions lists + historical suspicious patterns. 3. Score anomaly likelihood. 4. Route high-risk to human review. 5. Learn from investigator decisions.",
-          "businessCase": "Expected 35% increase in detection sensitivity, 40% reduction in false positives, regulatory compliance, $5M penalty avoidance.",
-          "failureModes": ["Sanctions lists outdated or incomplete", "False positives create alert fatigue", "Sophisticated schemes evade rule-based systems", "Cross-border transactions create data gaps"],
-          "roi": "$5M+ penalty avoidance | 12-month payback",
-          "prompts": [
+          ],
+          "failureModes": [
             {
-              "id": "ch1_p2_pr1",
-              "title": "Transaction Anomaly Detector",
-              "code": "Analyze the transaction dataset for suspicious patterns. Flag potential AML risk, provide confidence score, and recommend action.",
-              "inputSchema": {
-                "type": "object",
-                "properties": {
-                  "transactions": {
-                    "type": "array",
-                    "items": {
-                      "type": "object",
-                      "properties": {
-                        "amount": { "type": "number" },
-                        "sender": { "type": "string" },
-                        "receiver": { "type": "string" },
-                        "country": { "type": "string" },
-                        "timestamp": { "type": "string" }
-                      }
-                    }
-                  }
+              "id": "fm_ch1_p1_01",
+              "number": 1,
+              "name": "PDF OCR Hallucination - Blurry Invoice Text",
+              "severity": "MEDIUM",
+              "symptom": "AI flags surcharge as 'unauthorized' but it IS in contract when clerk reviews original. False dispute. Confidence drops from 0.95 to 0.42 when human validates the actual PDF.",
+              "rootCause": "Low-resolution or faxed invoice PDF. OCR engine misreads surcharge names: 'F-Surcharge' becomes 'F_charge' or 'E-Surcharge'. LLM searches exact string match and fails to find it in contract, even though the surcharge exists under different formatting or font variation.",
+              "recovery": {
+                "immediate": {
+                  "action": "Confidence Filtering",
+                  "description": "Only output disputes with confidence ≥0.85. Mark anything <0.7 as 'requires manual review.' This filters ~15-20% of edge cases before sending.",
+                  "timeline": "Implement day 1"
                 },
-                "required": ["transactions"]
+                "shortTerm": {
+                  "action": "Contract Standardization",
+                  "description": "Work with Procurement to mandate digital contracts (no scans). Create 'canonical surcharge list' mapping all variations ('F-Surcharge', 'FuelSur', 'F_charge', 'E-Surcharge' → canonical: 'Fuel Surcharge'). Add to prompt as reference library.",
+                  "timeline": "2 weeks (requires carrier coordination)"
+                },
+                "longTerm": {
+                  "action": "Contract Management System",
+                  "description": "Implement repository (Apptio, Determine, or custom) with contract metadata. Each contract stores canonical surcharge names, zone data, terms. LLM queries system database vs scanning PDFs. Eliminates OCR ambiguity.",
+                  "timeline": "6-8 weeks (governance + training)"
+                }
               },
-              "mockOutput": {
-                "totalTransactions": 47,
-                "anomalies": [
-                  {
-                    "transactionId": "TXN_2024_001",
-                    "riskScore": 8.7,
-                    "reason": "Large round-dollar transfer to high-risk jurisdiction",
-                    "amount": 250000,
-                    "pattern": "Structuring risk"
-                  },
-                  {
-                    "transactionId": "TXN_2024_015",
-                    "riskScore": 7.2,
-                    "reason": "Repeated micro-transactions to same beneficiary",
-                    "amount": 9999,
-                    "pattern": "Threshold avoidance"
-                  }
-                ],
-                "overallRisk": "MEDIUM",
-                "recommendation": "ESCALATE_TO_COMPLIANCE",
-                "sanctionsMatches": 0,
-                "newPatternCount": 2
-              }
-            }
-          ]
-        },
-        {
-          "id": "ch1_p3",
-          "number": 3,
-          "title": "Customer Churn Prediction",
-          "narrative": "Banks lose high-value customers to competitors without warning. Predicting churn early allows for targeted retention campaigns. The challenge is identifying at-risk customers with enough lead time to intervene.",
-          "workflow": "1. Extract customer behavioral signals (transaction frequency, product diversity, support contacts, competitor activity signals). 2. Compare to churn cohort patterns. 3. Score churn probability + key driver factors. 4. Recommend retention action + messaging. 5. Track intervention success.",
-          "businessCase": "Expected 22% reduction in churn among high-value segment, $3.8M revenue retention, improved CLV.",
-          "failureModes": ["Churn drivers differ by customer segment", "Retention offers mistimed or irrelevant", "Too late detection (churn already decided)", "Privacy concerns on customer surveillance"],
-          "roi": "$3.8M revenue saved | 8-month payback",
-          "prompts": [
+              "emailTemplate": "Subject: PROCESS ALERT: OCR Validation for Freight Disputes\n\nTeam - Procurement & Finance,\n\nWe've identified that low-resolution invoice PDFs can cause AI misreads of surcharge names (e.g., 'F-Surcharge' vs 'FuelSur'). To protect carrier relationships and maintain 99% accuracy, we're implementing a validation gate:\n\n**New Process:**\n- Disputes with confidence ≥0.85 → auto-sent\n- Disputes 0.70-0.84 → manual queue for review\n- Disputes <0.70 → flagged for Procurement verification\n\nThis adds minimal delay (~24 hours) but ensures we never send a false dispute. Target: 99% precision in all disputes sent.\n\nWhy: One false dispute erodes carrier goodwill. \n\nQuestions? Contact [Finance Lead]."
+            },
             {
-              "id": "ch1_p3_pr1",
-              "title": "Churn Risk Analyzer",
-              "code": "Assess customer churn risk based on behavioral metrics. Provide risk score, key drivers, and recommended retention action.",
-              "inputSchema": {
-                "type": "object",
-                "properties": {
-                  "customerId": { "type": "string" },
-                  "accountAgeMonths": { "type": "number" },
-                  "monthlyTransactionCount": { "type": "number" },
-                  "productCount": { "type": "number" },
-                  "supportContactsLast90Days": { "type": "number" },
-                  "accountBalanceUSD": { "type": "number" },
-                  "debitCardUsageLastMonth": { "type": "boolean" }
+              "id": "fm_ch1_p1_02",
+              "number": 2,
+              "name": "Carrier Relationship Damage - Over-Disputing",
+              "severity": "HIGH",
+              "symptom": "200+ valid disputes approved in single batch and sent on Monday. Carrier account manager calls your CFO Wednesday: 'We're re-evaluating this relationship. Your team is being adversarial.' Carrier threatens slower service tier allocation. Effective result: you lose dispute capability for 6+ months due to political necessity.",
+              "rootCause": "'Being right' ≠ 'winning.' Carriers operate on relationship dynamics, not legal parsing. When hit with 200 simultaneous disputes, they perceive 'audit aggression' vs relief that charges are catching real cost—even if all 200 are valid. The $3,500 owed matters less than pride/perception of being 'nickel-and-dimed.'",
+              "recovery": {
+                "immediate": {
+                  "action": "Dispute Prioritization & Batching",
+                  "description": "Override 'send all disputes' default. (1) High-value items >$500 go first. (2) Systemic errors (same mistake on 10+ shipments) second. (3) Process small <$50 items separately via monthly batch. Reduces Week 1 volume from 200→30-40 high-impact disputes.",
+                  "timeline": "Implement before pilot launch"
                 },
-                "required": ["customerId", "accountAgeMonths", "monthlyTransactionCount"]
+                "shortTerm": {
+                  "action": "Proactive Carrier Communication",
+                  "description": "Call each carrier account manager BEFORE first dispute batch: 'We're implementing AI audit assistance. Goal: better accuracy, not aggression. First batch will be X high-value items—all valid. Can we set up weekly partnership calls instead of individual dispute emails?' Reframes disputes as collaboration vs audit.",
+                  "timeline": "1 week before pilot"
+                },
+                "longTerm": {
+                  "action": "Shared P&L Model",
+                  "description": "Propose to top carriers: 'Let's split upside of better auditing. We reduce invalid charges, you see cleaner invoicing, we each take 50% of savings.' Converts dispute from 'you're being audited' to 'we're fixing shared billing problems.' Won't work with all carriers, but high-tier partners often accept.",
+                  "timeline": "Weeks 8-12 of operation"
+                }
               },
-              "mockOutput": {
-                "customerId": "CUST_XYZ_789",
-                "churnRiskScore": 0.73,
-                "riskLevel": "HIGH",
-                "drivers": [
-                  { "factor": "30% decline in transaction frequency", "impact": 0.35 },
-                  { "factor": "Multiple support contacts (3 in 30d)", "impact": 0.25 },
-                  { "factor": "Low product diversity (1 of 5 available)", "impact": 0.15 }
-                ],
-                "recommendation": "IMMEDIATE_OUTREACH",
-                "suggestedActions": [
-                  "Offer fee waiver on premium product",
-                  "Assign dedicated relationship manager",
-                  "Provide personalized financial health report"
-                ],
-                "estimatedValue": 45000,
-                "historicalSimilarOutcomes": 234
-              }
-            }
-          ]
-        },
-        {
-          "id": "ch1_p4",
-          "number": 4,
-          "title": "Fraud Detection in Real-Time",
-          "narrative": "Payment fraud occurs in milliseconds. Legacy fraud detection systems rely on retrospective analysis, catching fraud after damage occurs. Real-time detection requires immediate decision-making with incomplete information.",
-          "workflow": "1. Ingest transaction message at point-of-sale/wire. 2. Compare to customer profile, merchant, geography patterns. 3. Score fraud likelihood in <100ms. 4. Output decision (approve/decline/challenge). 5. Update model with fraud outcomes.",
-          "businessCase": "Expected 45% reduction in fraud losses, improved customer experience via fewer false declines, $8.2M annual savings.",
-          "failureModes": ["False declines reduce customer satisfaction", "Fraud patterns evolve faster than model retrains", "Cat-and-mouse escalation with fraudsters", "Legitimate high-value transactions blocked"],
-          "roi": "$8.2M annually | 6-month payback",
-          "prompts": [
+              "emailTemplate": "Subject: AI-Assisted Freight Audit - Partnership Approach\n\nDear [Carrier Account Manager],\n\nAs part of our operational efficiency initiative, we're implementing AI-assisted freight invoice auditing. This is a partnership effort, not an adversarial audit.\n\n**Key Points:**\n- We'll catch currently-undetected errors (6% of invoices are inaccurate)\n- Disputes will be contract-based and specific\n- We prioritize: (1) large errors ($500+), (2) systemic problems (10+ shipments), (3) small items left for quarterly review\n\n**Our Ask:**\nCan we schedule a 20-minute call to discuss:\n- How you prefer disputes structured (email vs dashboard vs monthly reconciliation)\n- Whether weekly partnership reviews replace individual dispute emails\n- Any contract clauses you'd like to clarify proactively\n\nThis is about improving our SHARED billing accuracy, not penalizing your operations.\n\n**Suggested Times:** [3 options, Teams link]\n\nLast note: We value this relationship. This is about visibility and accuracy, not aggression.\n\nBest,\n[Your CFO/VP Supply Chain]"
+            },
             {
-              "id": "ch1_p4_pr1",
-              "title": "Real-Time Fraud Scorer",
-              "code": "Evaluate a payment transaction for fraud risk in real-time. Provide decision (approve/decline/challenge), confidence, and risk factors.",
-              "inputSchema": {
-                "type": "object",
-                "properties": {
-                  "transactionId": { "type": "string" },
-                  "amount": { "type": "number" },
-                  "merchant": { "type": "string" },
-                  "merchantCategory": { "type": "string" },
-                  "customerLocation": { "type": "string" },
-                  "transactionLocation": { "type": "string" },
-                  "timeOfDay": { "type": "string" },
-                  "deviceId": { "type": "string" },
-                  "isInternational": { "type": "boolean" }
+              "id": "fm_ch1_p1_03",
+              "number": 3,
+              "name": "Contract Amendment Blind Spot - Outdated Terms",
+              "severity": "HIGH",
+              "symptom": "You dispute $3,200 'Hazmat Surcharge' that you're certain isn't in the contract. Carrier responds: 'It IS in the contract...Amendment 4, dated March 2025, page 2. Added post-Russia sanctions.' Your PDF library has Contract v1. You look foolish and now must repair carrier relationship. Affects ~12% of contracts updated in past 18 months.",
+              "rootCause": "Contract amendments are transmitted separately (email, vendor portal, EDI). They're rarely consolidated into one master PDF. When Procurement receives Amendment 4, it emails to specific buyer, not contract library. Original PDF (used in AI system) never gets updated. You audit against stale contractual terms.",
+              "recovery": {
+                "immediate": {
+                  "action": "Amendment Flag & Verification",
+                  "description": "Before escalating disputes for any contract, search for 'amendment,' 'addendum,' 'modification,' 'change order' within 6 months of contract signature. If found, flag dispute as 'pending amendment verification' and DON'T SEND until Procurement confirms latest version. Add 24-hour verification gate.",
+                  "timeline": "Implement day 1"
                 },
-                "required": ["transactionId", "amount", "merchant"]
+                "shortTerm": {
+                  "action": "Centralized Contract Repository with Version Control",
+                  "description": "Work with Procurement to establish mandatory contract management. (1) Every contract has a 'Master Copy' label with signature date. (2) Every amendment is filed WITH the original (not lost in email). (3) Procurement updates the master PDF when amendments arrive. (4) LLM system queries BOTH master + latest amendments before analyzing invoices.",
+                  "timeline": "2-3 weeks (Procurement coordination)"
+                },
+                "longTerm": {
+                  "action": "Amendment Auto-Update & Alert System",
+                  "description": "Implement TMS/contract portal that auto-alerts IT when carriers submit amendments (via EDI 810/855 signals, email rules, etc). Amendment automatically triggers a review flag in audit system. If approved, system auto-updates contract PDF for next audit cycle. Requires TMS upgrade or custom integration.",
+                  "timeline": "8-12 weeks (IT infrastructure)"
+                }
               },
-              "mockOutput": {
-                "transactionId": "TXN_2024_99876",
-                "decision": "APPROVE",
-                "fraudProbability": 0.08,
-                "confidence": 0.94,
-                "riskFactors": [
-                  { "factor": "Merchant category matches customer history", "signal": "POSITIVE" },
-                  { "factor": "Transaction location 50mi from home", "signal": "CAUTION" },
-                  { "factor": "Amount within typical range", "signal": "POSITIVE" }
-                ],
-                "processingTimeMs": 47,
-                "deviceTrust": 0.82,
-                "velocityCheck": "NORMAL"
-              }
-            }
-          ]
-        },
-        {
-          "id": "ch1_p5",
-          "number": 5,
-          "title": "Regulatory Reporting Automation",
-          "narrative": "Financial institutions submit 30+ regulatory reports per year to different agencies. Manual compilation is error-prone and resource-intensive. The challenge is automating complex report generation while ensuring accuracy and audit trails.",
-          "workflow": "1. Collect raw transaction/customer/compliance data from core systems. 2. Aggregate per regulatory framework (CCAR, DFAST, MAS, BSA). 3. Apply validation rules and reconcile discrepancies. 4. Generate structured report. 5. Enable exception handling + audit trail.",
-          "businessCase": "Expected 60% reduction in reporting labor, 95% first-pass accuracy, near-zero regulatory corrections, $1.2M annual operational savings.",
-          "failureModes": ["Data quality issues from source systems", "Regulatory rule interpretation errors", "Audit trail gaps create compliance risk", "Schema changes break automation"],
-          "roi": "$1.2M annually | 10-month payback",
-          "prompts": [
-            {
-              "id": "ch1_p5_pr1",
-              "title": "Regulatory Report Generator",
-              "code": "Compile raw bank data and generate a regulatory report. Output structured report with validation summary and audit trail.",
-              "inputSchema": {
-                "type": "object",
-                "properties": {
-                  "reportType": { "type": "string", "enum": ["CCAR", "DFAST", "BSA", "MAS"] },
-                  "reportingPeriod": { "type": "string" },
-                  "dataFile": { "type": "string" }
-                },
-                "required": ["reportType", "reportingPeriod"]
-              },
-              "mockOutput": {
-                "reportId": "REG_2024_Q1_CCAR",
-                "reportType": "CCAR",
-                "generatedAt": "2024-02-10T14:32:00Z",
-                "status": "READY_FOR_REVIEW",
-                "validation": {
-                  "passed": 127,
-                  "warnings": 3,
-                  "errors": 0
-                },
-                "summary": {
-                  "totalRecords": 4821,
-                  "totalValue": 4820500000,
-                  "reportingInstitutions": 1
-                },
-                "auditTrail": [
-                  { "timestamp": "2024-02-10T14:32:00Z", "action": "GENERATED", "user": "SYSTEM" },
-                  { "timestamp": "2024-02-10T14:32:45Z", "action": "VALIDATED", "user": "SYSTEM" }
-                ]
-              }
+              "emailTemplate": "Subject: CRITICAL PROCESS: Contract Amendment Verification Before Disputes\n\nTeam - Finance & Procurement,\n\nWe nearly sent disputes on a $3,200 'Hazmat Surcharge' that actually WAS valid per Amendment 4 (March 2025) that we didn't have in our contract library. This would have damaged the carrier relationship and looked foolish.\n\n**New Process (Effective Immediately):**\n\nBefore Finance sends ANY dispute to a carrier:\n1. Finance submits dispute to Procurement for amendment check\n2. Procurement searches: 'Is this contract current as of [date]?'\n   - If YES → send dispute\n   - If NO → wait for current version\n3. Max 24-hour verification delay\n4. Goal: 99% accuracy + zero false disputes due to stale contracts\n\n**Longer Term:** We're asking Procurement to implement a centralized contract repository with automated amendment tracking. This requires everyone's help.\n\n**Why it matters:** One avoidable false dispute outweighs months of recovery gains. This process protects our relationships and credibility.\n\nQuestions? Contact [Procurement Lead] or [Finance Lead]."
             }
           ]
         }
       ]
     },
-    {
+      "id": "ch2",
       "id": "ch2",
       "number": 2,
       "title": "Healthcare & Pharmaceuticals",
@@ -875,17 +770,5 @@
         }
       ]
     }
-  ],
-  "mockOutputExamples": {
-    "ch1_p1_pr1": {
-      "riskScore": 6.2,
-      "riskLevel": "MODERATE",
-      "recommendation": "CONDITIONAL_APPROVE"
-    },
-    "ch10_p5_pr1": {
-      "ghgReduction": "25%",
-      "costBillion": 12.5,
-      "jobs": 45000
-    }
-  }
+  ]
 }

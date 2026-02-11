@@ -6,10 +6,11 @@
   "scripts": {
     "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install",
     "build": "cd frontend && npm run build",
-    "dev": "concurrently --shell powershell.exe \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "build-and-dev": "npm run build && concurrently --shell powershell.exe \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "dev:frontend": "cd frontend && npm start",
-    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "npm start --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev": "npm run dev:backend",
+    "dev:with-frontend": "concurrently \"npm start --prefix frontend\" \"npm run dev --prefix backend\"",
+    "dev:only-backend": "npm run dev --prefix backend",
     "test": "jest --passWithNoTests",
     "test:backend": "cd backend && npm test",
     "test:frontend": "cd frontend && npm test"

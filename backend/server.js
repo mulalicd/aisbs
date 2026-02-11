@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 const apiRoutes = require('./routes/api');
+const ragRoutes = require('./routes/rag');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,6 +41,10 @@ try {
 
 // API Routes
 app.use('/api', apiRoutes(ustav));
+
+// RAG Routes (independent of main API routes)
+console.log(`✓ Initializing RAG System...`);
+app.use('/api', ragRoutes);
 
 // Serve React app for all other routes (SPA fallback)
 app.get('*', (req, res) => {

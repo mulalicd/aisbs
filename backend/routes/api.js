@@ -63,20 +63,52 @@ const createApiRoutes = (ustav) => {
    * Get specific problem with full details
    */
   router.get('/chapters/:chapterId/problems/:problemId', (req, res) => {
-    const { chapterId, problemId } = req.params;
-    const chapter = ustav.chapters.find((ch) => ch.id === chapterId);
+    try {
+      const { chapterId, problemId } = req.params;
+      const chapter = ustav.chapters.find((ch) => ch.id === chapterId);
 
-    if (!chapter) {
-      return res.status(404).json({ message: 'Chapter not found' });
+      if (!chapter) {
+        return res.status(404).json({ error: 'Chapter not found' });
+      }
+
+      const problem = chapter.problems.find((p) => p.id === problemId);
+
+      if (!problem) {
+        return res.status(404).json({ error: 'Problem not found' });
+      }
+
+      // Ensure all required fields exist with defaults
+      const safeProblem = {
+        id: problem.id,
+        number: problem.number,
+        title: problem.title || 'Untitled Problem',
+        sections: {
+          operationalReality: problem.sections?.operationalReality || null,
+          whyTraditionalFails: problem.sections?.whyTraditionalFails || null,
+          managerDecisionPoint: problem.sections?.managerDecisionPoint || null,
+          aiWorkflow: problem.sections?.aiWorkflow || null,
+          executionPrompt: problem.sections?.executionPrompt || null,
+          businessCase: problem.sections?.businessCase || null,
+          industryContext: problem.sections?.industryContext || null,
+          failureModes: problem.sections?.failureModes || null
+        },
+        prompts: Array.isArray(problem.prompts) ? problem.prompts : [],
+        businessCase: problem.businessCase || {},
+        failureModes: Array.isArray(problem.failureModes) ? problem.failureModes : []
+      };
+
+      console.log(`[API] Returning problem ${problemId}:`, {
+        promptsCount: safeProblem.prompts.length,
+        failureModesCount: safeProblem.failureModes.length,
+        hasBusinessCase: Object.keys(safeProblem.businessCase).length > 0
+      });
+
+      res.json(safeProblem);
+
+    } catch (error) {
+      console.error('[API] Error fetching problem:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
     }
-
-    const problem = chapter.problems.find((p) => p.id === problemId);
-
-    if (!problem) {
-      return res.status(404).json({ message: 'Problem not found' });
-    }
-
-    res.json(problem);
   });
 
   /**
