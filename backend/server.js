@@ -47,17 +47,30 @@ try {
 
 // API Routes (includes RAG execution)
 app.use('/api', apiRoutes(ustav));
+app.use('/api/rag', ragRoutes);
 
 // Serve React app for all other routes (SPA fallback)
 app.get('*', (req, res) => {
   res.sendFile(path.join(buildPath, 'index.html'));
 });
 
-// Error handling middleware
+// Global error handler (ENHANCED)
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error('\n\n');
+  console.error('╔════════════════════════════════════════════════════════╗');
+  console.error('║  💥 GLOBAL ERROR HANDLER CAUGHT ERROR                  ║');
+  console.error('╚════════════════════════════════════════════════════════╝');
+  console.error('[Global Error] Message:', err.message);
+  console.error('[Global Error] Stack:', err.stack);
+  console.error('[Global Error] Full error:', err);
+  console.error('[Global Error] Request URL:', req.url);
+  console.error('[Global Error] Request Method:', req.method);
+  console.error('[Global Error] Request Body:', JSON.stringify(req.body, null, 2));
+
   res.status(err.status || 500).json({
-    message: err.message || 'Internal Server Error',
+    success: false,
+    error: err.message || 'Internal Server Error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 

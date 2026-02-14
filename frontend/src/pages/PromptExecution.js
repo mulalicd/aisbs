@@ -25,7 +25,7 @@ const PromptExecution = () => {
 
   const handleExecute = async (inputs, mode) => {
     try {
-      const response = await axios.post('/api/execute', {
+      const response = await axios.post('http://localhost:5000/api/rag/execute', {
         promptId,
         userData: inputs,
         mode,
@@ -34,7 +34,11 @@ const PromptExecution = () => {
       return response.data;
     } catch (error) {
       console.error('[PromptExecution] API Error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || error.message);
+      const errorData = error.response?.data;
+      if (errorData && errorData.error) {
+        throw new Error(`${errorData.error}: ${errorData.message}`);
+      }
+      throw new Error(errorData?.message || error.message);
     }
   };
 

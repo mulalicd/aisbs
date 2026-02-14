@@ -6,6 +6,8 @@
 const { retrieve, validatePrompt, getPromptsByProblem, getIndex } = require('./retrieval');
 const { augment, validateUserData, getInputInstructions } = require('./augmentation');
 const { generate } = require('./generation');
+const { getUserTier } = require('../config/tiers');
+const conversationManager = require('../services/ConversationManager');
 
 /**
  * Execute complete RAG pipeline
@@ -16,10 +18,21 @@ const { generate } = require('./generation');
  * @returns {Promise<Object>} - Complete RAG response
  */
 async function executeRAG(query, userData, mode = 'mock', options = {}) {
+  console.log('\n\n╔════════════════════════════════════════════════════════╗');
+  console.log('║  🚀 RAG EXECUTION STARTED                              ║');
+  console.log('╚════════════════════════════════════════════════════════╝');
+  console.log('[RAG] promptId:', query);
+  console.log('[RAG] mode:', mode);
+  console.log('[RAG] userData:', JSON.stringify(userData, null, 2));
+  console.log('[RAG] options:', JSON.stringify(options, null, 2));
+
   const executionStart = Date.now();
 
   try {
     console.log(`[RAG] Starting execution for query: ${query}`);
+
+    // Defensive: Ensure userData is always an object
+    const safeUserData = userData || {};
 
     // STEP 1: Retrieve
     console.log(`[RAG] Step 1/3: Retrieving prompt...`);
@@ -29,17 +42,28 @@ async function executeRAG(query, userData, mode = 'mock', options = {}) {
 
     // STEP 2: Augment
     console.log(`[RAG] Step 2/3: Augmenting prompt with user data...`);
-    const augmentedPrompt = augment(prompt, userData, context);
+    const augmentedPrompt = augment(prompt, safeUserData, context);
     console.log(`[RAG]   ✓ Augmented (${augmentedPrompt.length} chars)`);
 
     // STEP 3: Generate
     console.log(`[RAG] Step 3/3: Generating output in ${mode} mode...`);
+
+    // Generiraj ili dohvati sessionId for history persistence
+    const sessionId = safeUserData._sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const userTier = getUserTier(safeUserData);
+
     const output = await generate(augmentedPrompt, prompt, mode, {
       ...options,
       context,
-      apiKey: userData._apiKey // Support dynamic API key injection from UI
+      apiKey: safeUserData._apiKey, // Support dynamic API key injection from UI
+      sessionId: sessionId,
+      tier: userTier,
+      followUp: safeUserData._followUp // Pass follow-up question for mock generation
     });
     console.log(`[RAG]   ✓ Generation complete`);
+
+    // Inject sessionId into output for frontend persistence
+    output.sessionId = sessionId;
 
     // Return complete response
     return {
@@ -59,7 +83,15 @@ async function executeRAG(query, userData, mode = 'mock', options = {}) {
         severity: prompt.severity,
         role: prompt.role
       },
-      ...output
+      ...output,
+      sessionId: sessionId,
+      tierInfo: {
+        currentTier: userTier.id,
+        features: userTier.features,
+        remainingQuestions: (userTier.id === 'basic')
+          ? Math.max(0, userTier.limits.messagesPerSession - (conversationManager.hasConversation(sessionId) ? conversationManager.conversations.get(sessionId).messages.filter(m => m.role === 'user').length : 0))
+          : Infinity
+      }
     };
 
   } catch (error) {

@@ -1,6 +1,7 @@
 /**
  * RAG Augmentation System - Template Interpolation & Data Validation
  * Combines prompts with user data
+ * Updated: 2026-02-14 - Added defensive type checking
  */
 
 /**
@@ -17,8 +18,41 @@
  * @returns {string} - Augmented prompt ready for LLM
  */
 function augment(prompt, userData, context = {}) {
+  console.log('\n╔════════════════════════════════════════════════════════╗');
+  console.log('║  ⚡ AUGMENTATION STARTED                                ║');
+  console.log('╚════════════════════════════════════════════════════════╝');
+  console.log('[Augmentation] Function called');
+  console.log('[Augmentation] Received prompt:', prompt ? 'YES' : 'NO');
+  console.log('[Augmentation] Received userData:', userData ? 'YES' : 'NO');
+  console.log('[Augmentation] Received context:', context ? 'YES' : 'NO');
+
+  console.log('[Augmentation] Starting augmentation');
+  console.log('[Augmentation] Prompt received:', {
+    hasPrompt: !!prompt,
+    promptType: typeof prompt,
+    promptKeys: prompt ? Object.keys(prompt) : 'null'
+  });
+  console.log('[Augmentation] UserData received:', {
+    hasUserData: !!userData,
+    userDataType: typeof userData,
+    userDataKeys: userData ? Object.keys(userData) : 'null'
+  });
+  console.log('[Augmentation] Context received:', {
+    hasContext: !!context,
+    contextType: typeof context,
+    contextKeys: context ? Object.keys(context) : 'null'
+  });
+
+  const safeUserData = userData || {};
+
+  // DEFENSIVE: Validation that prompt is valid
+  if (!prompt || typeof prompt !== 'object') {
+    console.error('[Augmentation] CRITICAL: Invalid prompt object');
+    throw new Error('Invalid prompt object received in augmentation');
+  }
+
   // Step 1: Validate user data against inputSchema
-  const validation = validateUserData(userData, prompt.inputSchema);
+  const validation = validateUserData(safeUserData, prompt.inputSchema);
   if (!validation.valid) {
     throw new Error(`Invalid user data: ${validation.errors.join(', ')}`);
   }
@@ -26,12 +60,14 @@ function augment(prompt, userData, context = {}) {
   let augmentedPrompt = prompt.promptCode;
 
   // Step 2: Interpolate input placeholders
-  Object.keys(userData).forEach((inputKey) => {
+  Object.keys(safeUserData).forEach((inputKey) => {
+    // Skip internal keys (starting with _)
+    if (inputKey.startsWith('_')) return;
     const placeholders = augmentedPrompt.match(/\[User:\s*Paste Data\]/g);
 
     if (placeholders && placeholders.length > 0) {
       // Replace first occurrence only (one per input)
-      const formattedData = formatDataForPrompt(userData[inputKey]);
+      const formattedData = formatDataForPrompt(safeUserData[inputKey]);
       augmentedPrompt = augmentedPrompt.replace(
         /\[User:\s*Paste Data\]/,
         formattedData
@@ -42,6 +78,23 @@ function augment(prompt, userData, context = {}) {
   // Step 3: Add metadata header
   const header = buildExecutionContext(prompt, context);
 
+  // Step 4: Append conversational context (if meaningful follow-up)
+  if (safeUserData._followUp) {
+    let historyStr = '';
+    if (Array.isArray(safeUserData._context)) {
+      historyStr = safeUserData._context
+        .filter(msg => !msg.error && msg.content)
+        .map(msg => {
+          // Clean content (remove HTML tags for cleaner prompt context)
+          const cleanContent = String(msg.content).replace(/<[^>]*>/g, '');
+          return `${msg.role.toUpperCase()}: ${cleanContent.substring(0, 1000)}${cleanContent.length > 1000 ? '...' : ''}`;
+        })
+        .join('\n\n');
+    }
+
+    augmentedPrompt += `\n\n=== CONVERSATION HISTORY ===\n${historyStr}\n\n=== NEW USER QUESTION ===\n${safeUserData._followUp}`;
+  }
+
   return header + '\n\n' + augmentedPrompt;
 }
 
@@ -49,39 +102,64 @@ function augment(prompt, userData, context = {}) {
  * Build execution context header
  */
 function buildExecutionContext(prompt, context = {}) {
-  const chapter = context.chapter || {};
-  const problem = context.problem || {};
+  console.log('[DEBUG] ========== buildExecutionContext START ==========');
+  console.log('[DEBUG] Step 1: Checking prompt parameter');
+  console.log('[DEBUG]   - prompt exists:', !!prompt);
+  console.log('[DEBUG]   - prompt type:', typeof prompt);
 
-  let header = `=== PROMPT EXECUTION CONTEXT ===
-Prompt ID: ${prompt.id}
-Title: ${prompt.title}
-Version: ${prompt.version}
-Role: ${prompt.role}
-Severity: ${prompt.severity}
-Chapter: ${chapter.title || 'N/A'}\n`;
+  try {
+    console.log('[DEBUG] Step 2: Attempting to get prompt keys');
+    const promptKeys = prompt ? Object.keys(prompt) : [];
+    console.log('[DEBUG]   - prompt keys:', promptKeys);
 
-  if (chapter.strategicPatterns) {
-    header += `Strategic Patterns:\n${chapter.strategicPatterns.substring(0, 300)}...\n`;
+    console.log('[DEBUG] Step 3: Attempting to stringify prompt');
+    const promptStr = JSON.stringify(prompt, null, 2);
+    console.log('[DEBUG]   - prompt JSON length:', promptStr ? promptStr.length : 0);
+    console.log('[DEBUG]   - prompt JSON preview:', promptStr ? promptStr.substring(0, 200) : 'null');
+
+    console.log('[DEBUG] Step 4: Checking context parameter');
+    console.log('[DEBUG]   - context exists:', !!context);
+    console.log('[DEBUG]   - context type:', typeof context);
+    const contextKeys = context ? Object.keys(context) : [];
+    console.log('[DEBUG]   - context keys:', contextKeys);
+
+    console.log('[DEBUG] Step 5: Creating safe variables');
+    const safePrompt = prompt || {};
+    const safeContext = context || {};
+    console.log('[DEBUG]   - safePrompt created');
+    console.log('[DEBUG]   - safeContext created');
+
+    console.log('[DEBUG] Step 6: Extracting chapter and problem');
+    const chapter = safeContext.chapter || {};
+    const problem = safeContext.problem || {};
+    console.log('[DEBUG]   - chapter extracted');
+    console.log('[DEBUG]   - problem extracted');
+
+    console.log('[DEBUG] Step 7: Building header string');
+    // SIMPLIFIED: Minimal header without any optional fields
+    const header = `=== PROMPT EXECUTION CONTEXT ===
+Prompt ID: ${safePrompt.id || 'unknown'}
+================================\n\n`;
+
+    console.log('[DEBUG]   - header built successfully');
+    console.log('[DEBUG] ========== buildExecutionContext END (SUCCESS) ==========');
+    return header;
+
+  } catch (error) {
+    console.error('[CRITICAL] ========== buildExecutionContext FAILED ==========');
+    console.error('[CRITICAL] Error message:', error.message);
+    console.error('[CRITICAL] Error name:', error.name);
+    console.error('[CRITICAL] Stack trace:', error.stack);
+    console.error('[CRITICAL] Prompt parameter:', prompt);
+    console.error('[CRITICAL] Context parameter:', context);
+    console.error('[CRITICAL] ========== END ERROR DUMP ==========');
+
+    // Return absolute minimal header
+    return `=== PROMPT EXECUTION CONTEXT ===
+Prompt ID: ERROR
+Error: ${error.message}
+================================\n\n`;
   }
-
-  if (problem.sections?.operationalReality) {
-    header += `Operational Context:\n${problem.sections.operationalReality.substring(0, 200)}...\n`;
-  }
-
-  if (chapter.qualityVarianceNote) {
-    header += `Quality Variance Note:\n${chapter.qualityVarianceNote}\n`;
-  }
-
-  header += `
-=== AI RESPONSE PRECISION PROTOCOL (VIP) ===
-1. DEPTH: Responses must be exhaustive, technical, and data-rich.
-2. FORMATTING: Use professional headers, dividers, and structural Markdown (tables, nested lists).
-3. EVIDENCE: Every claim must be supported by (simulated) data, ROI calculations, or industry benchmarks.
-4. ACTIONABLE: End every response with a "Monday Morning Action Plan" for executive decision-makers.
-5. STANDARDS: Adhere to industrial standards (e.g., ASMP, CSCMP, HIPAA, SOX) where applicable.
-================================`;
-
-  return header;
 }
 
 /**
@@ -166,6 +244,8 @@ function extractDataKeys(data) {
  * Handles arrays, objects, CSV strings, plain text
  */
 function formatDataForPrompt(data) {
+  if (data === null || data === undefined) return '';
+
   if (Array.isArray(data)) {
     // Convert array of objects to Markdown table
     return formatArrayAsTable(data);
@@ -213,6 +293,7 @@ function formatArrayAsTable(data) {
  * Format object as YAML-like format  
  */
 function formatObjectAsYAML(obj) {
+  if (!obj) return '';
   return Object.entries(obj)
     .map(([key, value]) => {
       if (typeof value === 'object') {

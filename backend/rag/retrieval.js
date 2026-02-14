@@ -36,6 +36,11 @@ function reloadUSTAV() {
  * @returns {Object} - { prompt, context } object
  */
 function retrieve(query) {
+  console.log('\n╔════════════════════════════════════════════════════════╗');
+  console.log('║  📖 RETRIEVAL STARTED                                   ║');
+  console.log('╚════════════════════════════════════════════════════════╝');
+  console.log('[Retrieval] Looking for promptId:', query);
+
   const ustav = loadUSTAV();
   if (!ustav) {
     throw new Error('USTAV database not available');
@@ -84,6 +89,17 @@ function retrieveByPromptId(promptId, ustav) {
     }
     const prompt = problem.prompts[promptIdx];
 
+    // FIX #3: Add detailed logging
+    console.log('[Retrieval] Successfully retrieved prompt:', {
+      promptId: prompt?.id || 'unknown',
+      hasPrompt: !!prompt,
+      promptKeys: prompt ? Object.keys(prompt) : 'none',
+      hasChapter: !!chapter,
+      hasProblem: !!problem
+    });
+
+    console.log('[Retrieval] Prompt object structure:', JSON.stringify(prompt, null, 2));
+
     return {
       prompt,
       context: {
@@ -96,12 +112,25 @@ function retrieveByPromptId(promptId, ustav) {
 
   // If no specific prompt, return first prompt of problem
   if (problem.prompts && problem.prompts.length > 0) {
+    const prompt = problem.prompts[0];
+
+    // FIX #3: Add detailed logging
+    console.log('[Retrieval] Successfully retrieved first prompt:', {
+      promptId: prompt?.id || 'unknown',
+      hasPrompt: !!prompt,
+      promptKeys: prompt ? Object.keys(prompt) : 'none',
+      hasChapter: !!chapter,
+      hasProblem: !!problem
+    });
+
+    console.log('[Retrieval] Prompt object structure:', JSON.stringify(prompt, null, 2));
+
     return {
-      prompt: problem.prompts[0],
+      prompt: prompt,
       context: {
         chapter,
         problem,
-        path: `Chapter ${chNum} > Problem ${pNum} > ${problem.prompts[0].title}`
+        path: `Chapter ${chNum} > Problem ${pNum} > ${prompt.title}`
       }
     };
   }

@@ -15,12 +15,22 @@ const {
   getExecutionStats
 } = require('../rag/index');
 
+const tierCheckMiddleware = require('../middleware/tierCheck');
+
 /**
  * POST /api/execute
  * Execute RAG pipeline
  * Body: { promptId, userData, mode: 'mock'|'llm' }
  */
-router.post('/execute', async (req, res) => {
+router.post('/execute', tierCheckMiddleware, async (req, res) => {
+  console.log('\n\n');
+  console.log('═══════════════════════════════════════════════════════════');
+  console.log('🔵 NEW REQUEST RECEIVED at /api/rag/execute');
+  console.log('═══════════════════════════════════════════════════════════');
+  console.log('[Routes] Request body:', JSON.stringify(req.body, null, 2));
+  console.log('[Routes] Request headers:', JSON.stringify(req.headers, null, 2));
+  console.log('[Routes] User tier:', req.userTier ? req.userTier.id : 'not set');
+
   try {
     const { promptId, userData, mode = 'mock' } = req.body;
 
@@ -32,12 +42,8 @@ router.post('/execute', async (req, res) => {
       });
     }
 
-    if (!userData || typeof userData !== 'object') {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing or invalid userData'
-      });
-    }
+    // Allow empty userData (will be defaulted to {} in executeRAG)
+    // No validation needed here
 
     if (!['mock', 'llm'].includes(mode)) {
       return res.status(400).json({
@@ -71,7 +77,7 @@ router.get('/prompts/validate/:promptId', (req, res) => {
   try {
     const { promptId } = req.params;
     const validation = validatePromptForExecution(promptId);
-    
+
     const statusCode = validation.valid ? 200 : 400;
     res.status(statusCode).json(validation);
 
@@ -176,7 +182,7 @@ router.get('/chapters/:chapterNum/problems', (req, res) => {
   try {
     const { chapterNum } = req.params;
     const index = listAllPrompts();
-    
+
     const chapter = index.chapters.find(ch => ch.number === parseInt(chapterNum));
     if (!chapter) {
       return res.status(404).json({
@@ -210,7 +216,7 @@ router.get('/chapters/:chapterNum/problems/:problemNum/prompts', (req, res) => {
   try {
     const { chapterNum, problemNum } = req.params;
     const result = getProblemPrompts(parseInt(chapterNum), parseInt(problemNum));
-    
+
     const statusCode = result.success ? 200 : 404;
     res.status(statusCode).json(result);
 

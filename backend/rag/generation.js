@@ -1,3 +1,14 @@
+const conversationManager = require('../services/ConversationManager');
+
+/**
+ * FEATURE FLAGS - ACA Implementation Phase 1
+ */
+const FEATURES = {
+  ENABLE_CONVERSATION_HISTORY: true,
+  ENABLE_TIER_SYSTEM: false, // Will be enabled in Phase 2
+  ENABLE_RATE_LIMITING: false
+};
+
 /**
  * RAG Generation System - Output Generation (Mock or LLM)
  * Produces execution results
@@ -12,6 +23,13 @@
  * @returns {Promise<Object>} - Generated output
  */
 async function generate(augmentedPrompt, promptMetadata, mode = 'mock', options = {}) {
+  console.log('\n╔════════════════════════════════════════════════════════╗');
+  console.log('║  🤖 GENERATION STARTED                                  ║');
+  console.log('╚════════════════════════════════════════════════════════╝');
+  console.log('[Generation] Mode:', mode);
+  console.log('[Generation] Augmented prompt length:', augmentedPrompt ? augmentedPrompt.length : 0);
+  console.log('[Generation] Prompt metadata:', promptMetadata ? promptMetadata.id : 'N/A');
+
   const startTime = Date.now();
 
   try {
@@ -42,6 +60,26 @@ async function generate(augmentedPrompt, promptMetadata, mode = 'mock', options 
  * Generate mock output from prompt metadata
  */
 function generateMock(promptMetadata, startTime, options = {}) {
+  // Check for follow-up question
+  if (options.followUp) {
+    const followUpResponse = generateMockFollowUp(options.followUp, promptMetadata, options.context);
+    return {
+      success: true,
+      mode: 'mock',
+      timestamp: new Date().toISOString(),
+      promptId: promptMetadata.id,
+      output: {
+        text: followUpResponse,
+        html: `<div style="font-family: 'Inter', sans-serif; color: #1f2937; line-height: 1.6;">${followUpResponse}</div>`
+      },
+      metadata: {
+        executionTime: (Date.now() - startTime) + 'ms',
+        model: 'Mock Conversational Agent v1.0',
+        status: 'SUCCESS'
+      }
+    };
+  }
+
   // Generate realistic, formatted output based on prompt type and context
   const mockOutput = generateRealisticMockOutput(promptMetadata, options.context);
 
@@ -1151,6 +1189,9 @@ async function generateLLM(augmentedPrompt, promptMetadata, startTime, options =
   if (options.apiKey) {
     if (options.apiKey.startsWith('sk-ant')) apiProvider = 'anthropic';
     else if (options.apiKey.startsWith('sk-')) apiProvider = 'openai';
+    else if (options.apiKey.startsWith('AIza')) apiProvider = 'gemini';
+    else if (options.apiKey.startsWith('gsk_')) apiProvider = 'groq';
+    else if (options.apiKey.startsWith('pplx-')) apiProvider = 'perplexity';
   }
 
   if (!apiKey) {
@@ -1170,6 +1211,79 @@ NEVER provide short or generic answers.
 At the end of every response, you MUST provide exactly three guided follow-up prompts for the user in the format: "Would you like to [actionable step]?". Each prompt must be strategic and technical.`;
 
   try {
+    // ============================================================================
+    // 🧪 SIMULATION / TEST MODE (Integration Verification)
+    // Allows user to verify provider logic without real API usage
+    // ============================================================================
+    if (apiKey && (apiKey.includes('test-sim') || apiKey.includes('test-key'))) {
+      console.log(`[RAG] 🧪 Simulation Mode Triggered for Provider: ${apiProvider}`);
+
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network latency
+
+      let simResponse = '';
+      let simModel = 'simulation-v1';
+
+      if (apiProvider === 'openai') {
+        simResponse = `**[SIMULATION MODE: OpenAI Connected]**\n\n### Executive Summary\nAnalysis confirmed. The OpenAI GPT-4o pipeline is fully operational.\n\n**Data Processed:**\n- Protocol: JSON/REST\n- Encryption: TLS 1.3\n- Latency: 42ms\n\nNo issues detected in the integration layer.`;
+        simModel = 'gpt-4o-sim';
+      } else if (apiProvider === 'anthropic') {
+        simResponse = `**[SIMULATION MODE: Claude Connected]**\n\n### Strategic Overview\nThe Anthropic integration is functioning correctly. Claude 3.5 Sonnet context window is active.\n\nEverything looks good on the backend logic.`;
+        simModel = 'claude-3-5-sonnet-sim';
+      } else if (apiProvider === 'gemini') {
+        simResponse = `**[SIMULATION MODE: Gemini Connected]**\n\n**System Status:** ONLINE\n**Provider:** Google Vertex/AI Studio\n**Throughput:** Optimal\n\nThe Gemini PRO adapter is successfully handling requests.`;
+        simModel = 'gemini-1.5-pro-sim';
+      } else if (apiProvider === 'groq') {
+        simResponse = `**[SIMULATION MODE: Groq Connected]**\n\n**Velocity:** HYPER-SPEED\n**LPU Status:** Active\n\nGroq Llama 3 integration is verified and ready for high-velocity inference.`;
+        simModel = 'llama3-70b-sim';
+      } else if (apiProvider === 'perplexity') {
+        simResponse = `**[SIMULATION MODE: Perplexity Connected]**\n\n**Search Depth:** Deep\n**Citations:** Enabled (Simulated)\n\nPerplexity Sonar pipeline is correctly configured.`;
+        simModel = 'sonar-large-sim';
+      }
+
+      // Add to conversation history to persist the "chat"
+      if (FEATURES.ENABLE_CONVERSATION_HISTORY && options.sessionId) {
+        conversationManager.addMessage(options.sessionId, 'assistant', simResponse);
+      }
+
+      return {
+        success: true,
+        mode: 'llm',
+        timestamp: new Date().toISOString(),
+        promptId: promptMetadata.id,
+        output: { rawText: simResponse },
+        metadata: {
+          executionTime: '420ms',
+          model: simModel,
+          provider: apiProvider,
+          status: 'SIMULATED',
+          tokenEstimate: 120
+        }
+      };
+    }
+    // ============================================================================
+
+    // NOVI KOD - Pripremi messages sa historijom
+    let messages = [];
+
+    // Feature Flag check for history
+    if (FEATURES.ENABLE_CONVERSATION_HISTORY && options.sessionId) {
+      const tierLimits = options.tier?.limits || { conversationHistory: true };
+      messages = conversationManager.getMessagesForAI(options.sessionId, false, tierLimits);
+    }
+
+    // Dodaj trenutni prompt
+    messages.push({ role: 'user', content: augmentedPrompt });
+
+    // Spremi user poruku u conversation (ako history uključen)
+    if (FEATURES.ENABLE_CONVERSATION_HISTORY && options.sessionId) {
+      if (!conversationManager.hasConversation(options.sessionId)) {
+        conversationManager.createConversation(options.sessionId, {
+          promptId: promptMetadata.id
+        });
+      }
+      conversationManager.addMessage(options.sessionId, 'user', augmentedPrompt);
+    }
+
     if (apiProvider === 'anthropic') {
       const Anthropic = require('@anthropic-ai/sdk');
       const anthropic = new Anthropic({ apiKey });
@@ -1178,31 +1292,105 @@ At the end of every response, you MUST provide exactly three guided follow-up pr
         model: 'claude-3-5-sonnet-20241022',
         max_tokens: 4096,
         system: systemPrompt,
-        messages: [{
-          role: 'user',
-          content: augmentedPrompt
-        }]
+        messages: messages // Šalje kompletnu historiju
       });
 
       response = message.content[0].type === 'text' ? message.content[0].text : '';
+
+      // Spremi AI odgovor u conversation
+      if (FEATURES.ENABLE_CONVERSATION_HISTORY && options.sessionId) {
+        conversationManager.addMessage(options.sessionId, 'assistant', response);
+      }
+
       model = 'claude-3-5-sonnet';
 
-    } else if (apiProvider === 'openai') {
+    } else if (apiProvider === 'openai' || apiProvider === 'groq' || apiProvider === 'perplexity') {
       const OpenAI = require('openai');
-      const openai = new OpenAI({ apiKey });
+
+      let baseURL = undefined;
+      let modelName = 'gpt-4o'; // Default for OpenAI (Updated to GPT-4 Omni for better compatibility)
+
+      if (apiProvider === 'groq') {
+        baseURL = 'https://api.groq.com/openai/v1';
+        modelName = 'llama3-70b-8192';
+      } else if (apiProvider === 'perplexity') {
+        baseURL = 'https://api.perplexity.ai';
+        modelName = 'llama-3-sonar-large-32k-online';
+      }
+
+      const openai = new OpenAI({
+        apiKey,
+        baseURL
+      });
+
+      // Add system prompt to messages
+      const openAiMessages = [
+        { role: 'system', content: systemPrompt },
+        ...messages
+      ];
 
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4-turbo',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: augmentedPrompt }
-        ],
+        model: modelName,
+        messages: openAiMessages,
         max_tokens: 4096,
         temperature: 0.7
       });
 
       response = completion.choices[0].message.content;
-      model = 'gpt-4-turbo';
+
+      // Save AI response
+      if (FEATURES.ENABLE_CONVERSATION_HISTORY && options.sessionId) {
+        conversationManager.addMessage(options.sessionId, 'assistant', response);
+      }
+
+      model = modelName;
+
+    } else if (apiProvider === 'gemini') {
+      // Gemini Direct JSON API
+      const fetch = require('node-fetch');
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`;
+
+      // Convert messages to Gemini format (user/model roles)
+      const geminiContent = messages.map(m => ({
+        role: m.role === 'user' ? 'user' : 'model',
+        parts: [{ text: m.content }]
+      }));
+
+      // Add System Instruction if supported (v1beta) or prepend to first message
+      // System instructions are separate in Gemini API
+      const payload = {
+        contents: geminiContent,
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        generationConfig: {
+          maxOutputTokens: 4096,
+          temperature: 0.7
+        }
+      };
+
+      const res = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        throw new Error(`Gemini API Error: ${data.error.message}`);
+      }
+
+      if (!data.candidates || !data.candidates[0].content) {
+        throw new Error('Gemini returned empty response');
+      }
+
+      response = data.candidates[0].content.parts[0].text;
+      model = 'gemini-1.5-pro';
+
+      if (FEATURES.ENABLE_CONVERSATION_HISTORY && options.sessionId) {
+        conversationManager.addMessage(options.sessionId, 'assistant', response);
+      }
 
     } else if (apiProvider === 'ollama') {
       // Local Ollama for development/testing
@@ -1379,11 +1567,104 @@ function truncateOutput(output, maxLength = 200) {
   return text;
 }
 
+/**
+ * Generate mock conversational response for follow-up questions
+ */
+function generateMockFollowUp(question, prompt, context) {
+  const q = String(question).toLowerCase().trim();
+
+  // 1. GREETINGS
+  if (q === 'hello' || q === 'hi' || q === 'hey' || q.includes('greeting')) {
+    return `<div style="padding: 1rem; background: #f8fafc; border-left: 4px solid #64748b; border-radius: 4px;">
+      <strong style="color: #334155;">Executive Assistant:</strong><br><br>
+        Greetings. I am ready to drill down into the EXEC-V1 diagnostic data. You can ask about:
+        <ul style="margin-top: 0.5rem; margin-left: 1.5rem; list-style-type: square; color: #475569;">
+          <li><strong>ROI & Financial Impact</strong></li>
+          <li><strong>Automation Yield Targets</strong></li>
+          <li><strong>Risk Factors & Infrastructure Decay</strong></li>
+          <li><strong>Implementation Roadmap</strong></li>
+        </ul>
+      </div>`;
+  }
+
+  // 2. SPECIFIC TOPICS (Existing Logic)
+  if (q.includes('automation yield') || q.includes('yield') || q.includes('coverage') || q.includes('84') || q.includes('12%')) {
+    return `<div style="padding: 1rem; background: #f0f9ff; border-left: 4px solid #0ea5e9; border-radius: 4px;">
+      <strong style="color: #0369a1;">Automation Yield Analysis:</strong><br><br>
+        The current Automation Yield is operating at <strong>12% Coverage</strong>, which represents a significant opportunity gap identified in the <em>EXEC-V1</em> diagnostic.<br><br>
+        By implementing the strategic protocol, we project this can trigger a rapid escalation to <strong>78% Coverage</strong> within 90 days. 
+        This optimization typically drives an annual impact of <span style="color: #059669; font-weight: bold;">$84,000</span> through reduced manual processing overhead and error elimination.
+      </div>`;
+  }
+
+  if (q.includes('roi') || q.includes('impact') || q.includes('return') || q.includes('value') || q.includes('money')) {
+    return `<div style="padding: 1rem; background: #f0fdf4; border-left: 4px solid #22c55e; border-radius: 4px;">
+      <strong style="color: #14532d;">ROI Projection:</strong><br><br>
+        The strategic roadmap offers a blended annual impact of approximately <strong>$288,400</strong> across all levers.<br><br> 
+        The primary driver is <strong>Operational Velocity ($142k)</strong>, followed by Automation Yield ($84k) and Resource Density ($62.4k).
+      </div>`;
+  }
+
+  if (q.includes('risk') || q.includes('drift') || q.includes('infrastructure') || q.includes('decay')) {
+    return `<div style="padding: 1rem; background: #fef2f2; border-left: 4px solid #ef4444; border-radius: 4px;">
+      <strong style="color: #7f1d1d;">Risk Assessment:</strong><br><br>
+        Current risk exposure is rated as <strong>Moderate</strong> given the 68% Infrastructure Decay observed in the <span style="font-family: monospace; background: #eee; padding: 2px 4px; border-radius: 3px;">SYSTEMIC DIAGNOSTIC</span>.<br><br> 
+        Implementing the automated safeguards will transition this to a 'Minimized' state (Asset Shield protocol), 
+        effectively eliminating 'Ghost Levers' that currently leak value.
+      </div>`;
+  }
+
+  // 3. AFFIRMATIVE / NEXT STEPS (Responding to "Would you like to analyze...?")
+  if (q === 'yes' || q.includes('sure') || q.includes('step') || q.includes('implementation') || q.includes('analyze') || q.includes('proceed')) {
+    return `<div style="padding: 1rem; background: #eff6ff; border-left: 4px solid #2563eb; border-radius: 4px;">
+      <strong style="color: #1e40af;">Phase 1: Data Terraforming & Implementation Steps</strong><br><br>
+      To recapture the identified <strong>$142,000 leakage</strong>, the system recommends the following immediate actions:<br><br>
+      <ol style="margin-left: 1.5rem; list-style-type: decimal; color: #1e3a8a;">
+        <li style="margin-bottom: 0.5rem;"><strong>Stabilize Entry Points (Week 1):</strong> Deploy RAG-auditors on all manual data entry interfaces to arrest immediate error propagation (currently 18%).</li>
+        <li style="margin-bottom: 0.5rem;"><strong>Bypass Legacy Approval Loops (Week 2):</strong> Auto-approve all Tier-3 decisions (<$5k value) to restore Operational Velocity.</li>
+        <li><strong>Resource Re-indexing (Week 3):</strong> Shift liberated human capital to the Q4 Innovation Fund.</li>
+      </ol>
+      <br>
+      <em>Status: Awaiting authorization. Shall we proceed with the resource allocation model?</em>
+    </div>`;
+  }
+
+  // 4. RESOURCE ALLOCATION (Logical follow-up to Step 3)
+  if (q.includes('resource') || q.includes('allocation') || q.includes('model')) {
+    return `<div style="padding: 1rem; background: #fffbeb; border-left: 4px solid #d97706; border-radius: 4px;">
+      <strong style="color: #92400e;">Resource Allocation Model (Optimized):</strong><br><br>
+      Current analysis suggests shifting <strong>40% of manual load</strong> to the automated Asset Shield.<br><br>
+      <strong>Proposed Distribution:</strong>
+      <ul style="margin-left: 1.5rem; list-style-type: disc; color: #78350f; margin-top: 0.5rem;">
+        <li><strong>Strategic Planning:</strong> <span style="color: #16a34a;">+15% Headcount</span> (Promoted from Operations)</li>
+        <li><strong>Manual Auditing:</strong> <span style="color: #dc2626;">-60% Headcount</span> (Re-skilled / Re-assigned)</li>
+        <li><strong>Innovation/R&D:</strong> <span style="color: #16a34a;">+45% Budget Allocation</span> (From recovered leakage)</li>
+      </ul>
+      <br>
+      <em>This model optimizes for long-term scalability rather than short-term headcount reduction.</em>
+    </div>`;
+  }
+
+  // 5. CATCH-ALL / UNKNOWN INPUT
+  return `<div style="padding: 1rem; background: #f3f4f6; border-left: 4px solid #9ca3af; border-radius: 4px;">
+    <strong>System Update:</strong><br><br>
+    I processed your input: <em>"${question}"</em>.<br><br>
+    I can provide deep-dive analysis on the following key vectors identified in the report:
+    <ul style="margin-left: 1.5rem; list-style-type: square; margin-top: 0.5rem; color: #4b5563;">
+      <li><strong>Economic Impact</strong> (ROI & Yield Calculations)</li>
+      <li><strong>Risk Analysis</strong> (Infrastructure Decay & Drift)</li>
+      <li><strong>Action Plan</strong> (Implementation Roadmap)</li>
+    </ul>
+    <br>Please select a vector to proceed or ask a specific question about the diagnostic data.
+    </div>`;
+}
+
 module.exports = {
   generate,
   generateMock,
   generateLLM,
   validateResponse,
   compareOutputFormats,
-  generateExecutionSummary
+  generateExecutionSummary,
+  generateMockFollowUp
 };

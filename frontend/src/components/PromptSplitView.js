@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import TierBadge from './TierBadge';
+import UpgradeModal from './UpgradeModal';
 // External libraries (jsPDF, html2canvas) are loaded via CDN in index.html to ensure availability
 // window.jspdf and window.html2canvas are used below
 
@@ -97,6 +99,14 @@ const PromptSplitView = ({ prompt, onExecute }) => {
   const [error, setError] = useState(null);
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+
+  // Tier & Upgrade Management
+  const [currentTier, setCurrentTier] = useState('basic');
+  const [remainingQuestions, setRemainingQuestions] = useState(5);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeErrorMessage, setUpgradeErrorMessage] = useState('');
+
   const fileInputRef = useRef(null);
 
   // For continuous chat
@@ -105,6 +115,16 @@ const PromptSplitView = ({ prompt, onExecute }) => {
 
   const chatEndRef = useRef(null);
   const submitButtonRef = useRef(null);
+
+  // Effect: Determine tier based on local API Key
+  useEffect(() => {
+    if (apiKey && apiKey.trim().length > 20) {
+      setCurrentTier('custom_key');
+      setRemainingQuestions(Infinity);
+    } else {
+      setCurrentTier('basic');
+    }
+  }, [apiKey]);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -176,7 +196,8 @@ const PromptSplitView = ({ prompt, onExecute }) => {
     const payload = {
       ...inputs,
       _dataSource: dataSource,
-      _apiKey: apiKey
+      _apiKey: apiKey,
+      _sessionId: sessionId // Send existing session if available
     };
 
     const initialUserMsg = dataSource === 'mock'
@@ -187,6 +208,17 @@ const PromptSplitView = ({ prompt, onExecute }) => {
 
     try {
       const result = await onExecute(payload, mode);
+
+      // Update sessionId from response
+      if (result.sessionId) {
+        setSessionId(result.sessionId);
+      }
+
+      // Update tier information if returned
+      if (result.tierInfo) {
+        setRemainingQuestions(result.tierInfo.remainingQuestions);
+      }
+
       const { content, isHtml, metadata, rawOutput } = processResult(result);
 
       const aiResponse = {
@@ -200,6 +232,15 @@ const PromptSplitView = ({ prompt, onExecute }) => {
       setConversation(prev => [...prev, aiResponse]);
     } catch (err) {
       console.error('[PromptSplitView] Execution error:', err);
+
+      // Check for Tier Upgrade Requirement
+      if (err.message && (err.message.includes('tier_limit_exceeded') || err.message.includes('session_limit_exceeded'))) {
+        setUpgradeErrorMessage(err.message);
+        setShowUpgradeModal(true);
+        setLoading(false);
+        return;
+      }
+
       setError(err.message || 'Execution failed');
       setConversation(prev => [...prev, { role: 'ai', content: `System Error: ${err.message}`, error: true }]);
     } finally {
@@ -221,11 +262,18 @@ const PromptSplitView = ({ prompt, onExecute }) => {
         ...inputs,
         _dataSource: dataSource,
         _apiKey: apiKey,
-        _followUp: followUpInput,
+        _sessionId: sessionId, // Pass current session
+        _followUp: userMsg.content,
         _context: conversation
       };
 
       const result = await onExecute(payload, mode);
+
+      // Update sessionId from response
+      if (result.sessionId) {
+        setSessionId(result.sessionId);
+      }
+
       const { content, isHtml, metadata, rawOutput } = processResult(result);
 
       const aiResponse = {
@@ -238,6 +286,16 @@ const PromptSplitView = ({ prompt, onExecute }) => {
       setConversation(prev => [...prev, aiResponse]);
 
     } catch (err) {
+      console.error('[PromptSplitView] Follow-up error:', err);
+
+      // Check for Tier Upgrade Requirement
+      if (err.message && (err.message.includes('tier_limit_exceeded') || err.message.includes('session_limit_exceeded'))) {
+        setUpgradeErrorMessage(err.message);
+        setShowUpgradeModal(true);
+        setLoading(false);
+        return;
+      }
+
       setError(err.message);
       setConversation(prev => [...prev, { role: 'ai', content: `Error: ${err.message}`, error: true }]);
     } finally {
@@ -367,10 +425,39 @@ const PromptSplitView = ({ prompt, onExecute }) => {
               <span className={`status-badge ${mode === 'llm' ? 'live' : 'mock'}`}>
                 {mode === 'llm' ? 'PRODUCTION (LLM)' : 'SIMULATION (MOCK)'}
               </span>
+              {sessionId && (
+                <button
+                  onClick={() => {
+                    setSessionId(null);
+                    setConversation([]);
+                    setInputs({});
+                  }}
+                  className="text-[10px] font-bold bg-red-50 text-red-600 border border-red-100 px-2 py-1 rounded hover:bg-red-100 transition-colors flex items-center gap-1"
+                  title="Reset conversation and clear session history"
+                >
+                  🔄 New Session
+                </button>
+              )}
             </div>
           </div>
 
           <div className="console-wrapper">
+
+            {/* Tier Status Badge */}
+            <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+              <TierBadge tier={currentTier} remaining={currentTier === 'basic' ? remainingQuestions : undefined} />
+              {currentTier === 'basic' && (
+                <button
+                  onClick={() => {
+                    setUpgradeErrorMessage("Upgrade to Production Tier to unlock unlimited analysis and continuous memory.");
+                    setShowUpgradeModal(true);
+                  }}
+                  className="text-[9px] font-black text-blue-600 uppercase tracking-widest hover:underline"
+                >
+                  Learn More
+                </button>
+              )}
+            </div>
 
             {/* 1. Configuration Bar */}
             <div style={{ padding: '1rem', background: '#fff', borderBottom: '1px solid var(--border)' }}>
@@ -445,14 +532,14 @@ const PromptSplitView = ({ prompt, onExecute }) => {
                   {showApiKey && (
                     <form className="api-key-section" onSubmit={(e) => e.preventDefault()}>
                       <label className="block text-xs font-bold mb-1">
-                        Custom Provider Key (Claude/GPT)
+                        Custom Provider Key (Claude / GPT / Gemini / Groq)
                         {apiKey && <span className="ml-2 text-emerald-600">✓ Active</span>}
                       </label>
                       <input
                         type="password"
                         name="password"
                         className="api-key-input"
-                        placeholder="sk-..."
+                        placeholder="sk-..., AIza..., gsk_..., pplx-..."
                         value={apiKey}
                         autoComplete="current-password"
                         onChange={(e) => setApiKey(e.target.value)}
@@ -544,8 +631,8 @@ const PromptSplitView = ({ prompt, onExecute }) => {
                         <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{msg.content}</pre>
                       )}
 
-                      {/* Amplifier Rendering */}
-                      {msg.role === 'ai' && !msg.error && (
+                      {/* Amplifier Rendering - ONLY ON FIRST AI MESSAGE */}
+                      {msg.role === 'ai' && !msg.error && conversation.findIndex(m => m.role === 'ai') === idx && (
                         <Amplifier metadata={msg.metadata} output={msg.rawOutput} mode={mode} />
                       )}
 
@@ -603,6 +690,13 @@ const PromptSplitView = ({ prompt, onExecute }) => {
           </div>
         </div>
       </div>
+
+      {/* Tier Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        errorMessage={upgradeErrorMessage}
+      />
     </div>
   );
 };
