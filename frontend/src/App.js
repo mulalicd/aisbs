@@ -11,6 +11,7 @@ import PromptExecution from './pages/PromptExecution';
 import Preface from './pages/Preface';
 import IndexTerms from './pages/IndexTerms';
 import Bibliography from './pages/Bibliography';
+import Afterword from './pages/Afterword';
 
 import './App.css';
 
@@ -63,6 +64,7 @@ function App() {
               <Route path="/preface" element={<Preface />} />
               <Route path="/index-of-terms" element={<IndexTerms />} />
               <Route path="/bibliography" element={<Bibliography />} />
+              <Route path="/afterword" element={<Afterword />} />
               <Route path="/chapter/:chapterId" element={<ChapterView />} />
               <Route path="/chapter/:chapterId/problem/:problemId" element={<ProblemView />} />
               <Route

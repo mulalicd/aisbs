@@ -53,6 +53,9 @@ function Home() {
           <Link to="/bibliography" className="inline-flex items-center text-gray-500 font-bold uppercase tracking-widest text-xs md:text-sm hover:underline">
             Master Bibliography
           </Link>
+          <Link to="/afterword" className="inline-flex items-center text-gray-500 font-bold uppercase tracking-widest text-xs md:text-sm hover:underline">
+            Afterword
+          </Link>
         </div>
         <div className="border-b-2 border-gray-200 mt-6"></div>
       </header>

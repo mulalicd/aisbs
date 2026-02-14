@@ -46,6 +46,13 @@ const Sidebar = ({ className, onClose }) => {
           >
             Master Bibliography
           </NavLink>
+          <NavLink
+            to="/afterword"
+            className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
+            onClick={handleNavClick}
+          >
+            Afterword
+          </NavLink>
         </div>
 
         <div className="nav-group">

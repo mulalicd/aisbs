@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import Search from './Search';
 
 const Layout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -47,6 +48,7 @@ const Layout = ({ children }) => {
     return (
       <div className="book-cover-layout w-full">
         {children}
+        <Search />
       </div>
     );
   }
@@ -86,6 +88,7 @@ const Layout = ({ children }) => {
       <div className="main-content">
         {children}
       </div>
+      <Search />
     </div>
   );
 };

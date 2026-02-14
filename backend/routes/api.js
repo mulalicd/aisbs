@@ -23,6 +23,24 @@ const createApiRoutes = (ustav) => {
   });
 
   /**
+   * GET /api/search-index
+   * Return the search index for client-side search
+   */
+  router.get('/search-index', (req, res) => {
+    try {
+      const indexPath = path.join(__dirname, '../../data/searchIndex.json');
+      if (fs.existsSync(indexPath)) {
+        const indexData = fs.readFileSync(indexPath, 'utf8');
+        res.json(JSON.parse(indexData));
+      } else {
+        res.status(404).json({ message: 'Search index not found. Please run the build script.' });
+      }
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
    * GET /api/chapters
    * List all chapters
    */
