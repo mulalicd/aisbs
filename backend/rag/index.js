@@ -34,7 +34,11 @@ async function executeRAG(query, userData, mode = 'mock', options = {}) {
 
     // STEP 3: Generate
     console.log(`[RAG] Step 3/3: Generating output in ${mode} mode...`);
-    const output = await generate(augmentedPrompt, prompt, mode, { ...options, context });
+    const output = await generate(augmentedPrompt, prompt, mode, {
+      ...options,
+      context,
+      apiKey: userData._apiKey // Support dynamic API key injection from UI
+    });
     console.log(`[RAG]   ✓ Generation complete`);
 
     // Return complete response

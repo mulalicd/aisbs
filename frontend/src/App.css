@@ -624,26 +624,7 @@ body {
 
 /* --- Added Styles for Executive View --- */
 
-/* 1. Problem View: Executive Prompts Emphasis */
-.executive-prompts-emphasized {
-  border: 1px solid rgba(225, 29, 72, 0.3) !important;
-  box-shadow: 0 4px 20px rgba(225, 29, 72, 0.08) !important;
-  background: white !important;
-  position: relative;
-  overflow: hidden;
-}
-
-.executive-prompts-emphasized::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: var(--primary);
-}
-
-/* 2. Prompt Execution: Interaction Wrapper */
+/* 1. Prompt Execution: Interaction Wrapper */
 .console-wrapper {
   display: flex;
   flex-direction: column;

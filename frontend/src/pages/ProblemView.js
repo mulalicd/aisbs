@@ -136,7 +136,7 @@ function ProblemView() {
 
           {/* Executive Prompts Card */}
           {prompts.length > 0 && (
-            <section className="sidebar-card prompts-card executive-prompts-emphasized">
+            <section className="sidebar-card prompts-card">
               <h2 className="sidebar-card-title">EXECUTIVE PROMPTS</h2>
               <div className="prompts-grid">
                 {prompts.map((prompt, index) => (

@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+// External libraries (jsPDF, html2canvas) are loaded via CDN in index.html to ensure availability
+// window.jspdf and window.html2canvas are used below
 
 const Amplifier = ({ metadata, output, mode }) => {
   // If we have no metadata, don't render amplifier unless we want a generic one
@@ -39,7 +41,7 @@ const Amplifier = ({ metadata, output, mode }) => {
         <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
           <span>⚡</span> Executive Intelligence Amplifier
         </h4>
-        <span className="text-[10px] font-mono text-slate-400">v2.2.0</span>
+        <span className="text-[10px] font-mono text-slate-400">v2.5.0</span>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -84,6 +86,8 @@ const Amplifier = ({ metadata, output, mode }) => {
   );
 };
 
+
+
 const PromptSplitView = ({ prompt, onExecute }) => {
   const [inputs, setInputs] = useState({});
   const [dataSource, setDataSource] = useState('mock'); // 'mock' | 'user'
@@ -97,15 +101,36 @@ const PromptSplitView = ({ prompt, onExecute }) => {
 
   // For continuous chat
   const [followUpInput, setFollowUpInput] = useState('');
+
+
   const chatEndRef = useRef(null);
+  const submitButtonRef = useRef(null);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Optimization: Use requestAnimationFrame to avoid "Forced Reflow" violations
+    // during DOM updates in the conversation history.
+    const scrollTask = requestAnimationFrame(() => {
+      scrollToBottom();
+    });
+    return () => cancelAnimationFrame(scrollTask);
   }, [conversation, loading]);
+
+  // Global handler for guided prompts from HTML strings
+  useEffect(() => {
+    window.handleGuidedPrompt = (promptText) => {
+      setFollowUpInput(`Would you like to ${promptText}`);
+      // Use setTimeout to ensure state update has propagated if needed, 
+      // but clicking the button will pick up the current state if handled by form
+      setTimeout(() => {
+        submitButtonRef.current?.click();
+      }, 50);
+    };
+    return () => { delete window.handleGuidedPrompt; };
+  }, [conversation]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -220,6 +245,59 @@ const PromptSplitView = ({ prompt, onExecute }) => {
     }
   };
 
+  const handleDownloadPDF = async () => {
+    const element = document.getElementById('conversation-history');
+    if (!element) return;
+
+    // Access globals from CDN
+    const html2canvas = window.html2canvas;
+    const jsPDF = window.jspdf ? window.jspdf.jsPDF : null;
+
+    if (!html2canvas || !jsPDF) {
+      alert('PDF libraries not loaded. Please wait for the page to finish loading or check your connection.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      let heightLeft = pdfHeight;
+      let position = 0;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`AISBS_Executive_Report_${prompt.id}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (err) {
+      console.error('PDF Generation Error:', err);
+      alert('Failed to generate PDF. Please check console.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -259,9 +337,11 @@ const PromptSplitView = ({ prompt, onExecute }) => {
         <div className="split-pane">
           <div className="pane-header">
             <span className="pane-title">Reference Blueprint</span>
-            <span className={`status-badge ${prompt.severity?.toLowerCase() || 'low'}`}>
-              Impact: {prompt.severity || 'Standard'}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`status-badge ${prompt.severity?.toLowerCase() || 'low'}`}>
+                Impact: {prompt.severity || 'Standard'}
+              </span>
+            </div>
           </div>
           <div className="pane-content">
             <div className="prompt-display">
@@ -274,9 +354,20 @@ const PromptSplitView = ({ prompt, onExecute }) => {
         <div className="split-pane">
           <div className="pane-header">
             <span className="pane-title">Execution Console</span>
-            <span className={`status-badge ${mode === 'llm' ? 'live' : 'mock'}`}>
-              {mode === 'llm' ? 'PRODUCTION (LLM)' : 'SIMULATION (MOCK)'}
-            </span>
+            <div className="flex items-center gap-3">
+              {conversation.length > 0 && (
+                <button
+                  onClick={handleDownloadPDF}
+                  className="text-[10px] font-bold bg-white border border-slate-200 px-2 py-1 rounded hover:bg-slate-50 flex items-center gap-1 transition-colors"
+                  disabled={loading}
+                >
+                  <span className="text-red-600">PDF</span> Download Report
+                </button>
+              )}
+              <span className={`status-badge ${mode === 'llm' ? 'live' : 'mock'}`}>
+                {mode === 'llm' ? 'PRODUCTION (LLM)' : 'SIMULATION (MOCK)'}
+              </span>
+            </div>
           </div>
 
           <div className="console-wrapper">
@@ -352,17 +443,22 @@ const PromptSplitView = ({ prompt, onExecute }) => {
                   </button>
 
                   {showApiKey && (
-                    <div className="api-key-section">
-                      <label className="block text-xs font-bold mb-1">Custom Provider Key (Gemini/OpenAI)</label>
+                    <form className="api-key-section" onSubmit={(e) => e.preventDefault()}>
+                      <label className="block text-xs font-bold mb-1">
+                        Custom Provider Key (Claude/GPT)
+                        {apiKey && <span className="ml-2 text-emerald-600">✓ Active</span>}
+                      </label>
                       <input
                         type="password"
+                        name="password"
                         className="api-key-input"
                         placeholder="sk-..."
                         value={apiKey}
+                        autoComplete="current-password"
                         onChange={(e) => setApiKey(e.target.value)}
                       />
-                      <div className="text-[10px] text-gray-500 mt-1">Key is encrypted client-side and never stored.</div>
-                    </div>
+                      <div className="text-[10px] text-gray-500 mt-1">Key is used only for this session and is transmitted securely to the backend.</div>
+                    </form>
                   )}
                 </div>
               )}
@@ -430,15 +526,20 @@ const PromptSplitView = ({ prompt, onExecute }) => {
               )}
 
               {/* Conversation History */}
-              <div style={{ padding: '1.5rem' }}>
+              <div id="conversation-history" style={{ padding: '1.5rem', background: '#fff' }}>
                 {conversation.map((msg, idx) => (
-                  <div key={idx} className={`chat-message ${msg.role}`}>
-                    <span className={`chat-role-label ${msg.role}`}>
-                      {msg.role === 'user' ? 'Operator' : 'AI Assistant'}
-                    </span>
+                  <div key={idx} className={`chat-message ${msg.role}`} style={{ marginBottom: '2rem' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`chat-role-label ${msg.role}`}>
+                        {msg.role === 'user' ? 'Operator' : 'AI Assistant'}
+                      </span>
+                      <span className="text-[9px] text-slate-400 font-mono">
+                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
                     <div className="chat-message-content" style={msg.error ? { border: '1px solid red', background: '#fff5f5' } : {}}>
                       {msg.isHtml ? (
-                        <div dangerouslySetInnerHTML={{ __html: msg.content }} />
+                        <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: msg.content }} />
                       ) : (
                         <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>{msg.content}</pre>
                       )}
@@ -447,6 +548,8 @@ const PromptSplitView = ({ prompt, onExecute }) => {
                       {msg.role === 'ai' && !msg.error && (
                         <Amplifier metadata={msg.metadata} output={msg.rawOutput} mode={mode} />
                       )}
+
+
                     </div>
                   </div>
                 ))}
@@ -473,7 +576,7 @@ const PromptSplitView = ({ prompt, onExecute }) => {
                 <form onSubmit={handleFollowUp} className="flex gap-2">
                   <input
                     type="text"
-                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-red-600 font-sans"
+                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-red-600 font-sans follow-up-input"
                     placeholder="Refine output, ask follow-up, or request table format..."
                     value={followUpInput}
                     onChange={(e) => setFollowUpInput(e.target.value)}
@@ -481,6 +584,7 @@ const PromptSplitView = ({ prompt, onExecute }) => {
                   />
                   <button
                     type="submit"
+                    ref={submitButtonRef}
                     className="bg-black text-white px-6 rounded-lg font-bold hover:bg-gray-800 disabled:opacity-50"
                     disabled={loading || !followUpInput.trim()}
                   >

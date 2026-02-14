@@ -158,6 +158,31 @@ function generateActionPlan(actions, style) {
 }
 
 /**
+ * Generate three guided prompts for the user
+ */
+function generateGuidedPrompts(prompts) {
+  return `
+    <div style="margin-top: 32px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+      <h4 style="font-size: 13px; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px;">Next Strategic Steps</h4>
+      <div style="display: grid; gap: 10px;">
+        ${prompts.map(p => `
+          <button 
+            class="guided-prompt-btn" 
+            onclick="window.handleGuidedPrompt && window.handleGuidedPrompt('${p.replace(/'/g, "\\'")}')"
+            style="display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 16px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #1e2937; cursor: pointer; transition: all 0.2s; font-family: inherit;"
+            onmouseover="this.style.borderColor='#3b82f6'; this.style.backgroundColor='#f8fafc';" 
+            onmouseout="this.style.borderColor='#e2e8f0'; this.style.backgroundColor='white';"
+          >
+            <span style="color: #3b82f6; font-weight: bold;">➔</span>
+            <span>Would you like to <strong>${p}</strong>?</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/**
  * Generate realistic mock output based on prompt context
  */
 function generateRealisticMockOutput(prompt, context = {}) {
@@ -319,6 +344,12 @@ function generateRealisticMockOutput(prompt, context = {}) {
       { title: 'TMS Sync Refresh', desc: 'Update the Transport Management System reconciliation parameters to flag 4-day window breaches automatically.' },
       { title: 'RAG-Auditor Activation', desc: 'Deploy the RAG-based auto-reconciler to prevent future batch-file csv slop and automate recovery.' }
     ], { highlightBoxStyle })}
+
+      ${generateGuidedPrompts([
+      'drill down into the specific Service Failures by region',
+      'generate a formal carrier dispute letter template',
+      'simulate the ROI of a 10% rate reduction across all Ground shipments'
+    ])}
     `;
 
     // --- SCENARIO 2: HR & TALENT MANAGEMENT (Precision Standard) ---
@@ -421,6 +452,12 @@ function generateRealisticMockOutput(prompt, context = {}) {
       { title: 'SLA Enforcement', desc: 'Notify all Hiring Managers of the new "24-Hour Feedback Rule" to reduce candidate drop-off.' },
       { title: 'Bias Audit Trigger', desc: 'Run the current scorecard data through the AI-auditor to identify specific HM bias patterns.' }
     ], { highlightBoxStyle })}
+
+      ${generateGuidedPrompts([
+      'analyze candidate drop-off by specific engineering sub-team',
+      'refine the Stage 2 technical evaluation rubric for Senior roles',
+      'simulate the cost-to-hire impact of reducing fill-time by 10 days'
+    ])}
     `;
 
     // --- SCENARIO 3: MANUFACTURING (Precision Standard) ---
@@ -522,6 +559,12 @@ function generateRealisticMockOutput(prompt, context = {}) {
       { title: 'IoT Sensor Reset', desc: 'Recalibrate the pressure transducers on Line 4 to prevent phantom micro-stoppages detected in the telemetry.' },
       { title: 'Wash-down Protocol Audit', desc: 'Verify cleaning chemical concentration to ensure wash-down cycles meet the 85-minute target.' }
     ], { highlightBoxStyle })}
+
+      ${generateGuidedPrompts([
+      'optimize the sequence for the upcoming high-viscosity product run',
+      'analyze the OEE drift over the last 30 days for Line 4',
+      'generate a preventative maintenance schedule based on micro-stop telemetry'
+    ])}
     `;
 
     // --- SCENARIO 4: LEGAL & CONTRACTS (Precision Standard) ---
@@ -623,6 +666,12 @@ function generateRealisticMockOutput(prompt, context = {}) {
       { title: 'Vendor Push-Back Trigger', desc: 'Escalate the Termination-for-Convenience clause to the Procurement lead for hard negotiation.' },
       { title: 'Regulatory Compliance Audit', desc: 'Verify the data-deletion protocol to ensure alignment with Article 17 requirements.' }
     ], { highlightBoxStyle })}
+
+      ${generateGuidedPrompts([
+      'generate a red-lined counter-offer for the Intellectual Property clause',
+      'benchmark this risk profile against standard S&P 500 MSAs',
+      'analyze the data sovereignty impact of the current vendor cloud setup'
+    ])}
     `;
 
     // --- SCENARIO 5: FINANCE & BANKING (Precision Standard) ---
@@ -748,6 +797,12 @@ function generateRealisticMockOutput(prompt, context = {}) {
       { title: isFraud ? 'Engine Weight Update' : 'Budget Re-Allocation', desc: isFraud ? 'Increase the weighting of "Behavioral Mismatch" in the real-time scoring engine.' : 'Move recovered $124k leakage into the Q4 R&D innovation fund for high-priority items.' },
       { title: isFraud ? 'Linguistic Training' : 'SaaS Seat Audit', desc: isFraud ? 'Feed the flagged interaction logs into the training set for the next model iteration.' : 'Cancel the 142 unused SaaS licenses identified in the GL reconciliation.' }
     ], { highlightBoxStyle })}
+
+      ${generateGuidedPrompts([
+      isFraud ? 'analyze the geographic origin of the social engineering attempt' : 'break down the OpEx leakage by department',
+      isFraud ? 'generate a security awareness retraining module for high-risk targets' : 'simulate the ROI of moving to a zero-trust budget model',
+      isFraud ? 'trigger a full account-activity audit for the last 48 hours' : 'allocate the recovered funds to the SaaS consolidation project'
+    ])}
     `;
 
     // --- SCENARIO 6: HEALTHCARE & PATIENT ENGAGEMENT (Precision Standard) ---
@@ -849,6 +904,12 @@ function generateRealisticMockOutput(prompt, context = {}) {
       { title: 'MFA Simplification', desc: 'Enable one-click SMS verification to bypass the technical ceiling identified in the 65+ demographic.' },
       { title: 'Transportation Voucher Trigger', desc: 'Automate Uber/Lyft health vouchers for any pharmacy pick-up reminder that remains unacknowledged for >4 hours.' }
     ], { highlightBoxStyle })}
+
+      ${generateGuidedPrompts([
+      'analyze clinical outcome variance by patient age demographic',
+      'refine the conversational tone for the high-friction engagement nudge',
+      'simulate the long-term cost savings of the 14.2% engagement lift'
+    ])}
     `;
 
     // --- SCENARIO 7: SALES & MARKETING (Precision Standard) ---
@@ -950,6 +1011,12 @@ function generateRealisticMockOutput(prompt, context = {}) {
       { title: 'Dynamic Hook Rollout', desc: 'Deploy the AI-personalized follow-up sequence for the Mid-Market "Pricing View" cohort.' },
       { title: 'SDR Triage Bypass', desc: 'Deactivate the generic SDR gate for any lead matching the "Enterprise Intent" fingerprint.' }
     ], { highlightBoxStyle })}
+
+      ${generateGuidedPrompts([
+      'analyze the conversion lift of the initial 12 "Spear Mode" leads',
+      'generate an A/B test plan for the dynamic vs. static hook sequences',
+      'simulate the impact on quota attainment if SDR response time hits <5 minutes'
+    ])}
     `;
 
     // --- SCENARIO 8: GENERIC BUSINESS FALLBACK (Precision Standard) ---
@@ -1047,6 +1114,12 @@ function generateRealisticMockOutput(prompt, context = {}) {
       { title: 'Decision Loop Acceleration', desc: 'Implement the automated approval bypass for Tier-3 operational tasks.' },
       { title: 'Resource Re-allocation', desc: 'Move identified capital slop into the Q4 R&D innovation fund.' }
     ], { highlightBoxStyle })}
+
+      ${generateGuidedPrompts([
+      'drill down into the specific operational bottlenecks identified',
+      'simulate the long-term ROI of the full autonomous rollout',
+      'generate a risk-mitigation checklist for the phased implementation'
+    ])}
     `;
   }
 
@@ -1071,11 +1144,17 @@ function generateRealisticMockOutput(prompt, context = {}) {
  * Generate using LLM API
  */
 async function generateLLM(augmentedPrompt, promptMetadata, startTime, options = {}) {
-  const apiProvider = options.provider || process.env.LLM_PROVIDER || 'anthropic';
-  const apiKey = options.apiKey || process.env.ANTHROPIC_API_KEY;
+  let apiProvider = options.provider || process.env.LLM_PROVIDER || 'anthropic';
+  let apiKey = options.apiKey || process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY;
+
+  // Auto-detect provider based on key prefix if injected from UI
+  if (options.apiKey) {
+    if (options.apiKey.startsWith('sk-ant')) apiProvider = 'anthropic';
+    else if (options.apiKey.startsWith('sk-')) apiProvider = 'openai';
+  }
 
   if (!apiKey) {
-    throw new Error(`No API key provided for ${apiProvider}. Set ${apiProvider.toUpperCase()}_API_KEY environment variable.`);
+    throw new Error(`No API key provided for ${apiProvider}. Please enter a key in the Workbench or set ${apiProvider.toUpperCase()}_API_KEY environment variable.`);
   }
 
   let response;
@@ -1087,7 +1166,8 @@ Use professional structural Markdown (tables, nested lists, headers).
 Every claim must be supported by realistic data, ROI calculations, or industry benchmarks. 
 End every response with a "Monday Morning Action Plan" for executive decision-makers. 
 Adhere to industrial standards (e.g., ASMP, CSCMP, HIPAA, SOX). 
-NEVER provide short or generic answers.`;
+NEVER provide short or generic answers.
+At the end of every response, you MUST provide exactly three guided follow-up prompts for the user in the format: "Would you like to [actionable step]?". Each prompt must be strategic and technical.`;
 
   try {
     if (apiProvider === 'anthropic') {
@@ -1176,7 +1256,18 @@ NEVER provide short or generic answers.`;
     };
 
   } catch (error) {
-    console.error('[RAG] LLM generation failed:', error.message);
+    let finalMessage = error.message;
+
+    // Enrich specific error types
+    if (error.message.includes('Connection error')) {
+      finalMessage = `Cloud Connection Error: The engine could not reach the ${apiProvider} API. This usually indicates a network restriction, proxy issue, or a temporary outage at the provider.`;
+    } else if (error.status === 401) {
+      finalMessage = `Authentication Failed: The provided ${apiProvider} API key is invalid or has expired.`;
+    } else if (error.status === 429) {
+      finalMessage = `Rate Limit Bound: Your ${apiProvider} account has reached its usage limit.`;
+    }
+
+    console.error('[RAG] LLM generation failed:', finalMessage);
 
     // Fallback to mock for demo purposes
     if (options.fallbackToMock) {
@@ -1184,7 +1275,7 @@ NEVER provide short or generic answers.`;
       return generateMock(promptMetadata, startTime);
     }
 
-    throw error;
+    throw new Error(finalMessage);
   }
 }
 
