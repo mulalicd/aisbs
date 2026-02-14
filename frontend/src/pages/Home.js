@@ -11,7 +11,7 @@ function Home() {
   const chapters = ustav?.chapters || [];
 
   return (
-    <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8 py-4 md:py-8 h-screen flex flex-col border-l-4 border-[var(--primary)] overflow-hidden">
+    <div className="max-w-[1800px] w-full mx-auto px-4 md:px-8 py-4 md:py-8 min-h-screen flex flex-col border-l-4 border-[var(--primary)]">
 
       {/* Top Right Link - Responsive Positioning */}
       <div className="w-full flex justify-end mb-4 md:absolute md:top-8 md:right-8">
@@ -61,7 +61,7 @@ function Home() {
       </header>
 
       {/* Table of Contents */}
-      <section className="flex-grow overflow-y-auto pr-2 custom-scrollbar">
+      <section className="flex-grow mt-8 space-y-4">
         <h2 className="book-toc-header mb-4">Table of Contents</h2>
 
         <div className="space-y-0">
