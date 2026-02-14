@@ -8,6 +8,9 @@ import Home from './pages/Home';
 import ChapterView from './pages/ChapterView';
 import ProblemView from './pages/ProblemView';
 import PromptExecution from './pages/PromptExecution';
+import Preface from './pages/Preface';
+import IndexTerms from './pages/IndexTerms';
+import Bibliography from './pages/Bibliography';
 
 import './App.css';
 
@@ -57,6 +60,9 @@ function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/preface" element={<Preface />} />
+              <Route path="/index-of-terms" element={<IndexTerms />} />
+              <Route path="/bibliography" element={<Bibliography />} />
               <Route path="/chapter/:chapterId" element={<ChapterView />} />
               <Route path="/chapter/:chapterId/problem/:problemId" element={<ProblemView />} />
               <Route

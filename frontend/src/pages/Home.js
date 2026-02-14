@@ -38,7 +38,23 @@ function Home() {
           50 Real-World Challenges from 10 Industries<br />
           A Manager's Workbook
         </p>
-        <div className="border-b-2 border-gray-200 mt-4"></div>
+        <div className="mt-6 border-l-2 border-gray-300 pl-4 py-1 italic text-gray-600 text-xs md:text-sm max-w-2xl">
+          "Homo naturae minister et interpres tantum facit et intelligit, quantum de naturae ordine re vel mente observaverit: nec amplius scit aut potest."
+          <span className="block mt-1 font-bold">— Francis Bacon, Novum Organum (1620)</span>
+        </div>
+        <div className="mt-8 flex flex-wrap gap-4 md:gap-8">
+          <Link to="/preface" className="inline-flex items-center text-[var(--primary)] font-bold uppercase tracking-widest text-xs md:text-sm hover:underline">
+            Read Preface
+            <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+          </Link>
+          <Link to="/index-of-terms" className="inline-flex items-center text-gray-500 font-bold uppercase tracking-widest text-xs md:text-sm hover:underline">
+            Index of Terms
+          </Link>
+          <Link to="/bibliography" className="inline-flex items-center text-gray-500 font-bold uppercase tracking-widest text-xs md:text-sm hover:underline">
+            Master Bibliography
+          </Link>
+        </div>
+        <div className="border-b-2 border-gray-200 mt-6"></div>
       </header>
 
       {/* Table of Contents */}

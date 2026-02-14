@@ -25,6 +25,27 @@ const Sidebar = ({ className, onClose }) => {
           >
             Dashboard
           </NavLink>
+          <NavLink
+            to="/preface"
+            className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
+            onClick={handleNavClick}
+          >
+            Preface
+          </NavLink>
+          <NavLink
+            to="/index-of-terms"
+            className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
+            onClick={handleNavClick}
+          >
+            Index of Terms
+          </NavLink>
+          <NavLink
+            to="/bibliography"
+            className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}
+            onClick={handleNavClick}
+          >
+            Master Bibliography
+          </NavLink>
         </div>
 
         <div className="nav-group">

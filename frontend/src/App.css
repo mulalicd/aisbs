@@ -49,6 +49,28 @@ body {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.resize-handle {
+  position: fixed;
+  left: calc(var(--sidebar-width) + 18px - 4px);
+  top: 0;
+  width: 8px;
+  height: 100vh;
+  cursor: col-resize;
+  z-index: 60;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.resize-handle:hover,
+.resize-handle.dragging {
+  background: var(--primary);
+  opacity: 0.3;
+}
+
+.app-layout.resize-active {
+  user-select: none;
+  cursor: col-resize;
+}
+
 .main-content {
   flex: 1;
   margin-left: calc(var(--sidebar-width) + 18px);
