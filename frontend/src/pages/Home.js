@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useUstav } from '../App';
+import UserManual from '../components/UserManual';
 
 function Home() {
   const { ustav, loading, error } = useUstav();
+  const [isManualOpen, setIsManualOpen] = useState(false);
 
   if (loading) return <div className="p-8 md:p-12 text-gray-500">Loading contents...</div>;
   if (error) return <div className="p-8 md:p-12 text-red-500">Error: {error}</div>;
@@ -22,6 +24,12 @@ function Home() {
             <a href="https://mulalic.ai-studio.wiki" target="_blank" rel="noreferrer" className="text-red-700 font-bold hover:underline block mt-1">
               mulalic.ai-studio.wiki
             </a>
+            <button
+              onClick={() => setIsManualOpen(true)}
+              className="text-gray-400 hover:text-gray-900 border-b border-gray-300 hover:border-gray-900 text-[10px] mt-2 uppercase tracking-widest transition-colors font-medium"
+            >
+              📖 User Manual
+            </button>
           </div>
         </div>
       </div>
@@ -87,6 +95,7 @@ function Home() {
           Davor Mulalić
         </a>
       </footer>
+      <UserManual isOpen={isManualOpen} onClose={() => setIsManualOpen(false)} />
     </div>
   );
 }
