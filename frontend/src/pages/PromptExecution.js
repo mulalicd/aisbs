@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../api/axios';
 import { useUstav } from '../App';
 import Breadcrumbs from '../components/Breadcrumbs';
 import PromptSplitView from '../components/PromptSplitView';
@@ -25,7 +25,7 @@ const PromptExecution = () => {
 
   const handleExecute = async (inputs, mode) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/rag/execute', {
+      const response = await axios.post('/api/rag/execute', {
         promptId,
         userData: inputs,
         mode,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from './api/axios';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';

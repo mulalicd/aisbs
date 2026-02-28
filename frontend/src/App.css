@@ -473,10 +473,11 @@ body {
 
 .split-view {
   display: grid;
-  grid-template-columns: 35fr 65fr;
+  grid-template-columns: 30fr 70fr;
   gap: 2rem;
   flex: 1;
-  min-height: 0;
+  min-height: 800px;
+  /* Increased min-height for better visibility of AI responses */
 }
 
 .split-pane {
@@ -510,6 +511,8 @@ body {
   padding: 2rem;
   overflow-y: auto;
   flex: 1;
+  max-height: 800px;
+  /* Set max-height for better scroll behavior */
 }
 
 /* Code & Prompt Display */
@@ -637,10 +640,18 @@ body {
 @media (max-width: 1024px) {
   .split-view {
     grid-template-columns: 1fr;
+    min-height: 600px;
+    /* Maintain adequate height on tablets */
   }
 
   .workbench-container {
     height: auto;
+    min-height: 600px;
+  }
+
+  .console-output-area {
+    min-height: 500px;
+    /* Adjust for tablet view */
   }
 }
 
@@ -659,6 +670,8 @@ body {
   overflow-y: auto;
   padding-right: 1rem;
   margin-bottom: 1rem;
+  min-height: 600px;
+  /* Increased min-height to ensure AI responses are fully visible */
 }
 
 /* Chat Bubbles */
@@ -667,11 +680,20 @@ body {
   animation: fadeIn 0.3s ease-in-out;
 }
 
+#conversation-history {
+  min-height: 400px;
+  /* Ensure conversation history has adequate height for AI responses */
+}
+
 .chat-message-content {
   padding: 1.5rem;
   border-radius: 16px;
   font-size: 0.95rem;
   line-height: 1.6;
+  max-height: none;
+  /* Allow content to expand fully */
+  overflow: visible;
+  /* Ensure all content is visible */
 }
 
 .chat-message.user .chat-message-content {
